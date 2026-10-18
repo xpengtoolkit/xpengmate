@@ -43,7 +43,7 @@ code="$(curl -s -o /dev/null -w '%{http_code}' "$BASE/")"
 [[ "$code" == "200" || "$code" == "302" ]] || fail "app root returned $code"
 ok "app responds ($code)"
 
-if curl -fsS "$BASE/users/sign_in" -o /dev/null 2>/dev/null; then
+if curl -fsS "$BASE/sign_in" -o /dev/null 2>/dev/null; then
   ok "sign-in page reachable"
 fi
 
