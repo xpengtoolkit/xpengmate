@@ -112,7 +112,11 @@ services:
       - XPENG_VIN=${XPENG_VIN:-}
       - XPENG_USABLE_BATTERY_KWH=${XPENG_USABLE_BATTERY_KWH:-87.5}
       - XPENG_CAR_NAME=${XPENG_CAR_NAME:-XPeng}
+      # Optional: an XPENG GDPR export zip fills SoC/odometer/range on positions.
+      - XPENG_EXPORT_ZIP=${XPENG_EXPORT_ZIP:-}
       - TZ=${TZ:-Australia/Sydney}
+    volumes:
+      - ./data/exports:/data/exports
     depends_on:
       - database
 

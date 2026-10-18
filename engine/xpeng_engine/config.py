@@ -84,6 +84,9 @@ class Config:
     simulate_file: str = ""
     simulate_speed: float = 60.0
     simulate_loop: bool = False
+    #: Seconds to wait before the replay starts, so a fresh stack can boot and
+    #: sign in before the (compressed) timeline runs past it.
+    simulate_delay: float = 0.0
 
     # -- observability ----------------------------------------------
     status_file: str = "/data/state/status.json"
@@ -138,6 +141,7 @@ def load_config() -> Config:
         simulate_file=_env("XPENG_SIMULATE_FILE"),
         simulate_speed=_env_float("XPENG_SIMULATE_SPEED", 60.0),
         simulate_loop=_env_bool("XPENG_SIMULATE_LOOP", False),
+        simulate_delay=_env_float("XPENG_SIMULATE_DELAY", 0.0),
         status_file=_env("XPENG_STATUS_FILE", "/data/state/status.json"),
         log_level=_env("XPENG_LOG_LEVEL", "INFO").upper(),
     )

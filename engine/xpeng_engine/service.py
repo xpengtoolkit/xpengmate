@@ -347,6 +347,10 @@ class Engine:
         self.state.update_poll_status(mqtt_connected=True)
         path = self.config.simulate_file
         _LOGGER.info("Simulating telemetry from %s", path)
+        delay = max(0.0, self.config.simulate_delay)
+        if delay:
+            _LOGGER.info("Replay starts in %.0fs (XPENG_SIMULATE_DELAY)", delay)
+            await asyncio.sleep(delay)
         speed = max(0.01, self.config.simulate_speed)
         while True:
             frames = _load_frames(path)

@@ -32,6 +32,7 @@ from typing import Any, Iterable, Sequence
 
 import psycopg
 
+import export_enrich
 from evconduit import Evconduit
 
 _LOGGER = logging.getLogger("xpengmate.history")
@@ -386,9 +387,10 @@ class Store:
         sessions: list[dict[str, Any]],
         position_times: list[tuple[dt.datetime, int]],
         skip: list[tuple],
-    ) -> int:
+    ) -> list[tuple[dict[str, Any], int]]:
         times = [item[0] for item in position_times]
         inserted = 0
+        created: list[tuple[dict[str, Any], int]] = []
         with self.conn.cursor() as cur:
             for session in sessions:
                 start = naive_utc(session.get("started_at"))
@@ -433,10 +435,175 @@ class Store:
                 )
                 process_id = int(cur.fetchone()[0])
                 self.remember("charging_process", key, process_id)
+                created.append((session, process_id))
                 inserted += 1
         self.conn.commit()
         _LOGGER.info("Imported %d charging processes", inserted)
+        return created
+
+    def insert_charge_samples(
+        self, created: list[tuple[dict[str, Any], int]]
+    ) -> int:
+        """Replay each session's power curve into TeslaMate's `charges` table.
+
+        EVConduit keeps a decimated copy of the export's 1 Hz charge series on the
+        session row (`curve`: parallel arrays of seconds-from-start, pack amp,
+        SoC, pack volt, wall-side kW, pack temperature, and the stride). That is
+        the only surviving shape of the charge detail after the export zip ages
+        out, and it is exactly what TeslaMate's charge graph needs.
+
+        `charges.charge_energy_added` is a running total integrated from the
+        wall-side power; TeslaMate's own logger writes the car's cumulative
+        figure here. `charger_power`/`charger_voltage`/`charger_actual_current`
+        are measured at the pack, which is the only place XPENG reports them.
+        """
+        inserted = 0
+        with self.conn.cursor() as cur:
+            for session, process_id in created:
+                curve = session.get("curve")
+                if not isinstance(curve, dict):
+                    continue
+                seconds = curve.get("t") or []
+                power = curve.get("input_kw") or []
+                soc = curve.get("soc") or []
+                volt = curve.get("volt") or []
+                amp = curve.get("amp") or []
+                if len(seconds) < 2 or len(power) != len(seconds):
+                    continue
+                start = naive_utc(session.get("started_at"))
+                if start is None:
+                    continue
+                range_start = as_float(session.get("range_start_km"))
+                range_end = as_float(session.get("range_end_km"))
+                soc_start = as_float(session.get("soc_start"))
+                soc_end = as_float(session.get("soc_end"))
+                peak = max((as_float(v) or 0.0) for v in power)
+                fast = bool(session.get("is_dc_fast")) or peak >= 20
+                cumulative = 0.0
+                previous_t: float | None = None
+                for index, t_value in enumerate(seconds):
+                    try:
+                        t_now = float(t_value)
+                    except (TypeError, ValueError):
+                        continue
+                    kw = as_float(power[index])
+                    if kw is None:
+                        previous_t = t_now
+                        continue
+                    if previous_t is not None and t_now > previous_t:
+                        cumulative += max(0.0, kw) * (t_now - previous_t) / 3600.0
+                    previous_t = t_now
+                    when = start + dt.timedelta(seconds=t_now)
+                    level = as_int(soc[index] if index < len(soc) else None)
+                    ideal_range = _interpolate_range(
+                        range_start, range_end, soc_start, soc_end, level
+                    )
+                    if ideal_range is None:
+                        continue
+                    cur.execute(
+                        """
+                        INSERT INTO charges
+                            (date, battery_level, usable_battery_level,
+                             charge_energy_added, charger_power, charger_actual_current,
+                             charger_voltage, charger_phases, ideal_battery_range_km,
+                             rated_battery_range_km, outside_temp, fast_charger_present,
+                             fast_charger_brand, fast_charger_type, conn_charge_cable,
+                             charging_process_id)
+                        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                        """,
+                        (
+                            when,
+                            level,
+                            None,
+                            round(cumulative, 2),
+                            max(0, as_int(kw) or 0),
+                            abs(as_int(amp[index])) if index < len(amp) else None,
+                            as_int(volt[index]) if index < len(volt) else None,
+                            None,
+                            ideal_range,
+                            None,
+                            None,
+                            fast,
+                            None,
+                            None,
+                            None,
+                            process_id,
+                        ),
+                    )
+                    inserted += 1
+        self.conn.commit()
+        _LOGGER.info("Imported %d charge samples", inserted)
         return inserted
+
+    def import_tyre_pressures(self, readings: list[dict[str, Any]]) -> int:
+        """Attach the hourly TPMS readings to the nearest position.
+
+        `positions` is where TeslaMate stores tyre pressures, and the logger
+        writes them on every sample. The history importer has one reading per
+        clock hour, so each position takes the reading closest to its own time,
+        within an hour. A reading that misses every position is not invented into
+        one.
+        """
+        if not readings:
+            return 0
+        rows = []
+        for reading in readings:
+            when = naive_utc(reading.get("recorded_at"))
+            values = (
+                as_float(reading.get("front_left_bar")),
+                as_float(reading.get("front_right_bar")),
+                as_float(reading.get("rear_left_bar")),
+                as_float(reading.get("rear_right_bar")),
+            )
+            if when and any(value is not None for value in values):
+                rows.append((when, *values))
+        if not rows:
+            return 0
+        with self.conn.cursor() as cur:
+            cur.execute("DROP TABLE IF EXISTS xpengmate_tyres")
+            cur.execute(
+                """
+                CREATE TEMP TABLE xpengmate_tyres (
+                    recorded_at timestamp without time zone PRIMARY KEY,
+                    fl numeric, fr numeric, rl numeric, rr numeric
+                )
+                """
+            )
+            cur.executemany(
+                "INSERT INTO xpengmate_tyres VALUES (%s,%s,%s,%s,%s)",
+                rows,
+            )
+            cur.execute(
+                """
+                UPDATE positions p SET
+                    tpms_pressure_fl = (
+                        SELECT t.fl FROM xpengmate_tyres t
+                        WHERE abs(extract(epoch FROM (t.recorded_at - p.date))) <= 3600
+                        ORDER BY abs(extract(epoch FROM (t.recorded_at - p.date)))
+                        LIMIT 1),
+                    tpms_pressure_fr = (
+                        SELECT t.fr FROM xpengmate_tyres t
+                        WHERE abs(extract(epoch FROM (t.recorded_at - p.date))) <= 3600
+                        ORDER BY abs(extract(epoch FROM (t.recorded_at - p.date)))
+                        LIMIT 1),
+                    tpms_pressure_rl = (
+                        SELECT t.rl FROM xpengmate_tyres t
+                        WHERE abs(extract(epoch FROM (t.recorded_at - p.date))) <= 3600
+                        ORDER BY abs(extract(epoch FROM (t.recorded_at - p.date)))
+                        LIMIT 1),
+                    tpms_pressure_rr = (
+                        SELECT t.rr FROM xpengmate_tyres t
+                        WHERE abs(extract(epoch FROM (t.recorded_at - p.date))) <= 3600
+                        ORDER BY abs(extract(epoch FROM (t.recorded_at - p.date)))
+                        LIMIT 1)
+                WHERE p.car_id = %s
+                """,
+                (self.car_id,),
+            )
+            updated = cur.rowcount
+        self.conn.commit()
+        _LOGGER.info("Attached tyre pressures to %d positions", updated)
+        return updated
 
     def insert_states(self, intervals: list[tuple[dt.datetime, dt.datetime, str]]) -> int:
         inserted = 0
@@ -458,6 +625,32 @@ class Store:
         self.conn.commit()
         _LOGGER.info("Imported %d states", inserted)
         return inserted
+
+
+def _interpolate_range(
+    range_start: float | None,
+    range_end: float | None,
+    soc_start: float | None,
+    soc_end: float | None,
+    level: int | None,
+) -> float | None:
+    """The range implied by this sample's SoC, between two measured endpoints.
+
+    `charges.ideal_battery_range_km` is NOT NULL in TeslaMate, so a sample
+    without a range cannot be written at all. EVConduit records the range only
+    at the session's ends; between them it moves with SoC, so the interpolation
+    is a straight line between two real measurements. When either end is missing
+    the answer is None and the sample is skipped rather than made up.
+    """
+    if range_start is None or range_end is None:
+        return None
+    if soc_start is None or soc_end is None or soc_start == soc_end:
+        return round(range_start, 2)
+    if level is None:
+        return None
+    fraction = (level - soc_start) / (soc_end - soc_start)
+    fraction = min(1.0, max(0.0, fraction))
+    return round(range_start + (range_end - range_start) * fraction, 2)
 
 
 # -- geometry/time helpers -----------------------------------
@@ -562,6 +755,7 @@ def run(args: argparse.Namespace) -> int:
     supabase_url = args.supabase_url or os.environ.get("SUPABASE_URL", "")
     service_key = args.service_key or os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
     vin = args.vin or os.environ.get("XPENG_VIN", "")
+    export_zip = args.export_zip or os.environ.get("XPENG_EXPORT_ZIP", "")
     if not dsn:
         print("XPENGMATE_DATABASE_URL is required", file=sys.stderr)
         return 2
@@ -573,6 +767,13 @@ def run(args: argparse.Namespace) -> int:
     store = Store(dsn, vin, float(args.usable_kwh))
     try:
         store.prepare()
+        if args.enrich_only:
+            if not export_zip:
+                print("--enrich-only needs --export-zip / XPENG_EXPORT_ZIP", file=sys.stderr)
+                return 2
+            matched = export_enrich.enrich(store, export_enrich.resolve_zip(export_zip))
+            _LOGGER.info("Export joined onto %d positions", matched)
+            return 0
         if not args.no_rebuild:
             removed = store.forget(
                 ["charging_process", "drive", "position", "state"]
@@ -597,7 +798,17 @@ def run(args: argparse.Namespace) -> int:
 
         drive_windows = store.insert_drives(trips, live_drives)
         position_times = store.insert_positions(positions, drive_windows, live_positions)
-        store.insert_charging_processes(sessions, position_times, live_charges)
+        created = store.insert_charging_processes(sessions, position_times, live_charges)
+        store.insert_charge_samples(created)
+        store.import_tyre_pressures(api.tyre_pressures(vin))
+        if export_zip:
+            matched = export_enrich.enrich(store, export_enrich.resolve_zip(export_zip))
+            _LOGGER.info("Export joined onto %d positions", matched)
+        else:
+            _LOGGER.info(
+                "No XPENG export zip supplied; positions keep GPS only "
+                "(set XPENG_EXPORT_ZIP to fill battery/odometer/range)"
+            )
         store.insert_states(derive_states(trips, sessions, positions))
         _LOGGER.info("History import complete")
     finally:
@@ -612,6 +823,16 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--service-key", default="")
     parser.add_argument("--vin", default="")
     parser.add_argument("--usable-kwh", default="87.5")
+    parser.add_argument(
+        "--export-zip",
+        default="",
+        help="XPENG GDPR data export zip: fills SoC/odometer/range on positions",
+    )
+    parser.add_argument(
+        "--enrich-only",
+        action="store_true",
+        help="only join an export zip onto the already-imported positions",
+    )
     parser.add_argument(
         "--no-rebuild",
         action="store_true",

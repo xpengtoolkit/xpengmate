@@ -1,0 +1,60 @@
+# Throwaway stack proving the live path with recorded telemetry.
+#
+#   python3 history/make_sim_frames.py --out scripts/sim/frames.json
+#   docker-compose -f scripts/sim/docker-compose.yml up -d
+#   docker exec scripts-sim_xpengmate_1 bin/teslamate rpc \
+#     'IO.inspect(TeslaMate.Api.sign_in(%TeslaMate.Auth.Tokens{}))'
+#
+# It uses the production images, its own database and port 4200, and writes
+# nothing to the real stack. Tear down with `down -v`.
+version: "3.8"
+services:
+  xpengmate:
+    image: xpengmate:local
+    restart: "no"
+    environment:
+      - ENCRYPTION_KEY=sim-encryption-key-0123456789abcdef0123456789abcdef
+      - DATABASE_USER=xpengmate
+      - DATABASE_PASS=simpw
+      - DATABASE_NAME=xpengmate_sim
+      - DATABASE_HOST=database
+      - DISABLE_MQTT=true
+      - TZ=Australia/Sydney
+      - VIRTUAL_HOST=localhost
+      - TOKEN=sim-provider-token
+      - TESLA_API_HOST=http://engine:8201
+      - TESLA_AUTH_HOST=http://engine:8201
+      - TESLA_AUTH_PATH=/oauth2/v3
+      - TESLA_WSS_HOST=ws://engine:8201
+      - RELEASE_DISTRIBUTION=name
+      - RELEASE_NODE=xpengmate_sim@127.0.0.1
+      - RELEASE_COOKIE=simportcookie
+    ports:
+      - "4200:4000"
+    depends_on:
+      - database
+      - engine
+
+  engine:
+    image: xpengmate-engine:local
+    restart: "no"
+    environment:
+      - XPENG_VIN=L1NNSGHA3SB800783
+      - XPENG_PROVIDER_PORT=8201
+      - XPENG_PROVIDER_TOKEN=sim-provider-token
+      - XPENG_SIMULATE=true
+      - XPENG_SIMULATE_FILE=/data/sim/frames.json
+      - XPENG_SIMULATE_SPEED=240
+      - XPENG_SIMULATE_DELAY=45
+      - XPENG_STATUS_FILE=/data/sim/status.json
+      - TZ=Australia/Sydney
+    volumes:
+      - ./:/data/sim
+
+  database:
+    image: postgres:18-trixie
+    restart: "no"
+    environment:
+      - POSTGRES_USER=xpengmate
+      - POSTGRES_PASSWORD=simpw
+      - POSTGRES_DB=xpengmate_sim

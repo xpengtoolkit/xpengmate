@@ -122,6 +122,19 @@ set `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` in `.env`), and writes:
 Every row it creates is recorded in `xpengmate_import`, so a re-run replaces its
 own rows and never touches anything the live logger wrote.
 
+Daily sync is installed as a user crontab entry (see
+`ops/xpengmate-history.cron`; a systemd timer is beside it for hosts with root).
+To also refresh the export zip that enriches positions with SoC and range:
+
+```bash
+EVCONDUIT_USER=<evconduit account id> ./scripts/sync-history.sh
+```
+
+That copies the newest export from the EVConduit host (where the zips live on
+disk - the API cannot serve them without a user token) into `data/exports/`, then
+runs the importer. Point `XPENG_EXPORT_ZIP` at the directory and the newest zip
+is picked automatically.
+
 ## Verification status
 
 Measured on the reference car (G6 RWD, VIN `…800783`):
@@ -130,9 +143,12 @@ Measured on the reference car (G6 RWD, VIN `…800783`):
 |---|---|
 | Engine provider contract (token, products, vehicle_data, websocket) | passes offline test suite |
 | xpengmate sign-in through the engine | `Starting logger for 'XPENG 800783'` |
-| History import (EVConduit, 2026-08-13 .. 2026-10-17) | 342 drives, 25,249 positions, 104 charges, 641 states |
+| History import (EVConduit, 2026-08-13 .. 2026-10-17) | 342 drives, 25,249 positions, 104 charges, 22,957 charge samples, 641 states |
+| Export enrichment (positions with SoC/odometer/range) | 24,150 of 25,249 (95.6%) |
+| Daily sync | user crontab installed on xpengmate-host, 03:30 |
 | App pages / branding | `XpengMate` title, logo, charge pages render (incl. a charge with no GPS) |
-| Live XPENG telemetry | **pending**: needs a dedicated XPENG account's certs/tenant/tokens |
+| Live path end to end (`XPENG_SIMULATE` replay of a real 292 km drive + charge) | drive opened/closed at 292.31 km, charging process opened, 1,279 positions written |
+| Live XPENG cloud telemetry | **pending**: needs a dedicated XPENG account's certs/tenant/tokens |
 
 ## What is approximate
 

@@ -91,3 +91,8 @@ import/
 __pycache__/
 *.pyc
 .venv/
+data/exports/*
+!data/exports/.gitkeep
+
+# history sync cron log
+history-sync.log

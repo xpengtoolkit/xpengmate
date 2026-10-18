@@ -97,6 +97,25 @@ live logger always has the position a charge started at. A historical charge fro
 an export has no coordinates, so the importer drops that `NOT NULL` rather than
 fabricating a latitude and longitude. Everything else keeps upstream's shape.
 
+## Scheduled sync, export enrichment and the simulated live test
+
+* **Daily sync**: `ops/xpengmate-history.cron` (or the systemd timer beside it)
+  runs `docker-compose run --rm history` at 03:30 and appends to
+  `history-sync.log`. The import is idempotent, so a failed or repeated run
+  converges.
+* **Export enrichment**: EVConduit's GPS logger records where the car was but
+  not how full it was; XPENG's data export is the mirror image. When
+  `XPENG_EXPORT_ZIP` names a zip (or a directory, newest zip wins), the importer
+  joins them by exact second and fills `positions.battery_level`, `odometer`,
+  `ideal/est_battery_range_km`, then re-derives each drive's start/end range.
+  On the reference car that covered 24,150 of 25,249 positions (95.6%).
+* **Proof of the live path without XPENG**: `history/make_sim_frames.py` turns a
+  real drive and a real charge from EVConduit into a replay file, and the
+  engine's `XPENG_SIMULATE` mode pushes it through the same provider API a live
+  connection uses. A throwaway stack (`scripts/sim/docker-compose.yml`) then logs
+  it like a live car - on the reference run TeslaMate opened a drive, closed it
+  at 292.31 km, and opened a charging process, all from the replay.
+
 ## Live vs historical overlap
 
 The importer stops at the earliest live-logged row (or at a configured cutoff) so
