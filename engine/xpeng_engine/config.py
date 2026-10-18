@@ -73,6 +73,14 @@ class Config:
     provider_port: int = 8201
     provider_token: str = ""
 
+    # -- data source ------------------------------------------------
+    #: "xpeng"  - authenticate to XPENG's cloud directly (native engine)
+    #: "ha"     - read live telemetry from an XPENG Home Assistant integration
+    source: str = "xpeng"
+    ha_url: str = ""
+    ha_token: str = ""
+    ha_entity_prefix: str = ""
+
     # -- boot policy ------------------------------------------------
     #: Serve the Tesla-compatible API even when the XPENG credentials are not
     #: installed yet. The car reports ``offline``; nothing is invented. This is
@@ -94,18 +102,31 @@ class Config:
 
     def validate(self) -> None:
         problems: list[str] = []
+        if self.source == "ha":
+            if not self.ha_url:
+                problems.append("XPENG_HA_URL is required when XPENG_SOURCE=ha")
+            if not self.ha_token:
+                problems.append("XPENG_HA_TOKEN is required when XPENG_SOURCE=ha")
+            if not self.ha_entity_prefix:
+                problems.append(
+                    "XPENG_HA_ENTITY_PREFIX is required when XPENG_SOURCE=ha "
+                    "(e.g. xpeng_800783)"
+                )
         if self.allow_offline:
             return
         if not self.simulate:
             if not self.vin:
                 problems.append("XPENG_VIN is required in live mode")
-            for label, path in (
-                ("XPENG_CERT_DIR", self.cert_dir),
-                ("XPENG_TENANT_FILE", self.tenant_file),
-                ("XPENG_TOKEN_FILE", self.token_file),
-            ):
-                if not os.path.isfile(path) and not os.path.isdir(path):
-                    problems.append(f"{label} does not exist: {path}")
+            if self.source != "ha":
+                # The native source is the only one that needs XPENG's own
+                # credentials; the Home Assistant source has none of its own.
+                for label, path in (
+                    ("XPENG_CERT_DIR", self.cert_dir),
+                    ("XPENG_TENANT_FILE", self.tenant_file),
+                    ("XPENG_TOKEN_FILE", self.token_file),
+                ):
+                    if not os.path.isfile(path) and not os.path.isdir(path):
+                        problems.append(f"{label} does not exist: {path}")
             if len(self.provider_token) < 8:
                 problems.append(
                     "XPENG_PROVIDER_TOKEN must be set (at least 8 characters); "
@@ -136,6 +157,10 @@ def load_config() -> Config:
         provider_bind=_env("XPENG_PROVIDER_BIND", "0.0.0.0"),
         provider_port=_env_int("XPENG_PROVIDER_PORT", 8201),
         provider_token=_env("XPENG_PROVIDER_TOKEN"),
+        source=_env("XPENG_SOURCE", "xpeng").lower() or "xpeng",
+        ha_url=_env("XPENG_HA_URL"),
+        ha_token=_env("XPENG_HA_TOKEN"),
+        ha_entity_prefix=_env("XPENG_HA_ENTITY_PREFIX"),
         allow_offline=_env_bool("XPENG_ALLOW_OFFLINE", False),
         simulate=_env_bool("XPENG_SIMULATE", False),
         simulate_file=_env("XPENG_SIMULATE_FILE"),

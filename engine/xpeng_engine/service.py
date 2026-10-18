@@ -22,6 +22,7 @@ from datetime import datetime, timezone
 from typing import Any, Callable
 
 from .api_session import ApiSession
+from .ha_source import HaSource
 from .config import Config, ConfigError, load_config
 from .mqtt_client import XPengMQTTClient
 from .state import EngineState
@@ -93,6 +94,8 @@ class Engine:
 
         if self.config.simulate:
             tasks.append(asyncio.create_task(self._simulate_loop(), name="simulate"))
+        elif self.config.source == "ha":
+            tasks.append(asyncio.create_task(self._ha_loop(), name="ha"))
         else:
             try:
                 await self._start_live()
@@ -339,6 +342,43 @@ class Engine:
                 self._last_error = "token refresh failed"
                 _LOGGER.warning("proactive token refresh failed", exc_info=True)
 
+    # -- Home Assistant integration as the live source ----------
+
+    def _on_ha_update(
+        self,
+        raw: dict,
+        when: datetime | None,
+        connected: bool,
+        xos_version: str | None,
+    ) -> None:
+        if not raw:
+            return
+        self.state.update_poll_status(mqtt_connected=connected)
+        if when is not None:
+            self.state.set_raw_snapshot(raw, when=when)
+        else:
+            self.state.set_raw_snapshot(raw)
+        if xos_version:
+            version = str(xos_version).strip()
+            if version.upper().startswith("XOS "):
+                version = version[4:].strip()
+            self.state.set_xos_version(version)
+
+    async def _ha_loop(self) -> None:
+        source = HaSource(
+            self.config.ha_url,
+            self.config.ha_token,
+            self.config.ha_entity_prefix,
+            self._on_ha_update,
+        )
+        self._last_error = None
+        _LOGGER.info(
+            "Reading live telemetry from Home Assistant at %s (%s)",
+            self.config.ha_url,
+            self.config.ha_entity_prefix,
+        )
+        await source.run()
+
     # -- simulation -------------------------------------------
 
     async def _simulate_loop(self) -> None:
@@ -385,12 +425,18 @@ class Engine:
             await asyncio.sleep(STATUS_INTERVAL)
             snap = self.state.snapshot()
             status = {
-                "mode": "simulate" if self.config.simulate else "live",
+                "mode": (
+                    "simulate"
+                    if self.config.simulate
+                    else ("ha" if self.config.source == "ha" else "live")
+                ),
                 "vin": self.state.vin,
                 "uptime_seconds": round(time.time() - self._started_at, 1),
                 "updated_at": datetime.now(timezone.utc).isoformat(),
                 "mqtt_connected": bool(
-                    self.mqtt.connected if self.mqtt is not None else False
+                    self.mqtt.connected
+                    if self.mqtt is not None
+                    else self.state.poll_status.get("mqtt_connected", False)
                 ),
                 "credentials_valid": bool(
                     self.mqtt is not None and not self.mqtt.credentials_expired

@@ -58,6 +58,13 @@ services:
       - XPENG_TOKEN_FILE=/data/secrets/xpeng_tokens.json
       - XPENG_PROVIDER_PORT=8201
       - XPENG_PROVIDER_TOKEN=${XPENG_PROVIDER_TOKEN}
+      # Data source: "xpeng" authenticates to the car's cloud directly;
+      # "ha" reads live telemetry from an XPENG Home Assistant integration
+      # instead, for accounts whose one session is already in use there.
+      - XPENG_SOURCE=${XPENG_SOURCE:-xpeng}
+      - XPENG_HA_URL=${XPENG_HA_URL:-}
+      - XPENG_HA_TOKEN=${XPENG_HA_TOKEN:-}
+      - XPENG_HA_ENTITY_PREFIX=${XPENG_HA_ENTITY_PREFIX:-}
       - XPENG_ALLOW_OFFLINE=${XPENG_ALLOW_OFFLINE:-true}
       - XPENG_STATUS_FILE=/data/state/status.json
       - XPENG_LOG_LEVEL=${XPENG_LOG_LEVEL:-INFO}

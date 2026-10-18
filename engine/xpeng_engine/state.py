@@ -132,14 +132,24 @@ class EngineState:
         self._notify()
 
     def set_raw_snapshot(self, raw: dict[str, Any], when: datetime | None = None) -> None:
-        """Install a state tree directly (simulator and REST fallback)."""
+        """Install a state tree directly (HA source, simulator, REST fallback).
+
+        ``when`` is the moment the *car* reported this data, which for the Home
+        Assistant source is the integration's own ``last_data_update`` and can be
+        minutes old on a sleeping car. Silence is therefore derived from that
+        timestamp (``None`` makes the mapping compute it) rather than reset to
+        zero - reporting a sleeping car as freshly heard is how it would never
+        fall asleep in TeslaMate.
+        """
         if not isinstance(raw, dict) or not raw:
             return
         moment = when or datetime.now(timezone.utc)
         with self._lock:
             self.data = raw
             self.last_data_timestamp = moment
-            self.poll_status["meaningful_silence_seconds"] = 0.0
+            self.poll_status["meaningful_silence_seconds"] = (
+                None if when is not None else 0.0
+            )
         self._notify()
 
     def set_rest_data(self, data: dict[str, Any]) -> None:

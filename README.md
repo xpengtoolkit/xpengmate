@@ -75,6 +75,30 @@ curl -I http://localhost:4100/          # app: 200 once signed in, 302 before
 ./scripts/smoke-test.sh                 # the above, with assertions
 ```
 
+## Live data: two ways
+
+The engine can be the XPENG client itself, or it can read live telemetry from an
+XPENG Home Assistant integration. XPENG allows **one session per account**, so
+these are alternatives, not layers:
+
+```yaml
+# native: the engine authenticates to XPENG itself
+XPENG_SOURCE=xpeng
+# certs/, secrets/ mounted as below
+
+# or: read the live entities of an xpengtoolkit integration over HA's API
+XPENG_SOURCE=ha
+XPENG_HA_URL=http://homeassistant.local:8123
+XPENG_HA_TOKEN=<long-lived token, read-only use>
+XPENG_HA_ENTITY_PREFIX=xpeng_800783
+```
+
+The HA source subscribes to `state_changed` over HA's websocket, reconstructs the
+same XPENG telemetry tree the native path produces, and takes the car's own
+timestamp from the integration's `last_data_update` - so a sleeping car is
+reported asleep instead of looking freshly heard. It uses the integration's own
+auth and renewal, and needs no XPENG credentials of its own.
+
 ## XPENG credentials for the engine
 
 The engine reads three files from `data/engine/`:
@@ -148,7 +172,8 @@ Measured on the reference car (G6 RWD, VIN `…800783`):
 | Daily sync | user crontab installed on xpengmate-host, 03:30 |
 | App pages / branding | `XpengMate` title, logo, charge pages render (incl. a charge with no GPS) |
 | Live path end to end (`XPENG_SIMULATE` replay of a real 292 km drive + charge) | drive opened/closed at 292.31 km, charging process opened, 1,279 positions written |
-| Live XPENG cloud telemetry | **pending**: needs a dedicated XPENG account's certs/tenant/tokens |
+| **Live car telemetry** (HA source, production integration on `.88`) | online state opened, position row written (59% / 62,142 km / GPS / TPMS), stream connected, XOS `5.9.5.8909` recorded in `updates` |
+| Native XPENG cloud source | built and unit-tested; needs a dedicated account's certs/tenant/tokens |
 
 ## What is approximate
 
