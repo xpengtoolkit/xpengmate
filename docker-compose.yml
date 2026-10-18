@@ -1,0 +1,132 @@
+# XpengMate: TeslaMate's app and dashboards, logging an XPENG.
+#
+# Two images are built locally - `xpengmate` (the Elixir fork) and the Python
+# `engine` (XPENG auth + MQTT telemetry served as Tesla's provider API) - and
+# three upstream images run beside them: Postgres, Grafana and Mosquitto.
+#
+# The app talks to the engine, never to XPENG, and the engine never touches the
+# database. That is TeslaMate's own "fleet provider" mode, unchanged: TOKEN,
+# TESLA_API_HOST/TESLA_AUTH_HOST/TESLA_WSS_HOST point at the engine.
+# name comes from COMPOSE_PROJECT_NAME in .env instead.
+# COMPOSE_PROJECT_NAME=xpengmate comes from .env: Compose v1 has no top-level name.
+services:
+  xpengmate:
+    build: .
+    image: xpengmate:local
+    restart: always
+    environment:
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY:?set ENCRYPTION_KEY in .env}
+      - SECRET_KEY_BASE=${SECRET_KEY_BASE:-}
+      - DATABASE_USER=xpengmate
+      - DATABASE_PASS=${DATABASE_PASS:?set DATABASE_PASS in .env}
+      - DATABASE_NAME=xpengmate
+      - DATABASE_HOST=database
+      - MQTT_HOST=mosquitto
+      - TZ=${TZ:-Australia/Sydney}
+      - VIRTUAL_HOST=${VIRTUAL_HOST:-localhost}
+      - TOKEN=${XPENG_PROVIDER_TOKEN:?set XPENG_PROVIDER_TOKEN in .env}
+      # Distributed node, only so `docker exec ... bin/teslamate rpc` can drive
+      # the provider sign-in without a browser (the sign-in is a LiveView form).
+      - RELEASE_DISTRIBUTION=name
+      - RELEASE_NODE=${RELEASE_NODE:-xpengmate@127.0.0.1}
+      - RELEASE_COOKIE=${RELEASE_COOKIE:?set RELEASE_COOKIE in .env}
+      - TESLA_API_HOST=http://engine:8201
+      - TESLA_AUTH_HOST=http://engine:8201
+      - TESLA_AUTH_PATH=/oauth2/v3
+      - TESLA_WSS_HOST=ws://engine:8201
+    ports:
+      - "${XPENGMATE_PORT:-4100}:4000"
+    volumes:
+      # Deliberately empty: a leftover file here turns the app into import mode.
+      - ./import:/opt/app/import
+      - srtm:/opt/app/.srtm_cache
+    depends_on:
+      - database
+      - engine
+    cap_drop:
+      - all
+
+  engine:
+    build: ./engine
+    image: xpengmate-engine:local
+    restart: always
+    environment:
+      - XPENG_VIN=${XPENG_VIN:-}
+      - XPENG_USABLE_BATTERY_KWH=${XPENG_USABLE_BATTERY_KWH:-87.5}
+      - XPENG_CERT_DIR=/data/certs
+      - XPENG_TENANT_FILE=/data/secrets/xpeng_tenant.json
+      - XPENG_TOKEN_FILE=/data/secrets/xpeng_tokens.json
+      - XPENG_PROVIDER_PORT=8201
+      - XPENG_PROVIDER_TOKEN=${XPENG_PROVIDER_TOKEN}
+      - XPENG_ALLOW_OFFLINE=${XPENG_ALLOW_OFFLINE:-true}
+      - XPENG_STATUS_FILE=/data/state/status.json
+      - XPENG_LOG_LEVEL=${XPENG_LOG_LEVEL:-INFO}
+      - TZ=${TZ:-Australia/Sydney}
+    volumes:
+      - ./data/engine:/data
+    ports:
+      # Loopback only: the app reaches it over the compose network, and the
+      # /healthz endpoint is the only thing anyone should curl from the host.
+      - "127.0.0.1:8201:8201"
+
+  database:
+    image: postgres:18-trixie
+    restart: always
+    environment:
+      - POSTGRES_USER=xpengmate
+      - POSTGRES_PASSWORD=${DATABASE_PASS:?set DATABASE_PASS in .env}
+      - POSTGRES_DB=xpengmate
+      - TZ=${TZ:-Australia/Sydney}
+    volumes:
+      - xpengmate-db:/var/lib/postgresql
+
+  grafana:
+    build:
+      context: .
+      dockerfile: grafana/Dockerfile
+    image: xpengmate-grafana:local
+    restart: always
+    environment:
+      - DATABASE_USER=xpengmate
+      - DATABASE_PASS=${DATABASE_PASS:?set DATABASE_PASS in .env}
+      - DATABASE_NAME=xpengmate
+      - DATABASE_HOST=database
+      - TZ=${TZ:-Australia/Sydney}
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:?set GRAFANA_ADMIN_PASSWORD in .env}
+    ports:
+      - "${GRAFANA_PORT:-3003}:3000"
+    volumes:
+      - xpengmate-grafana-data:/var/lib/grafana
+
+  # One-shot: `docker compose run --rm history`. It writes only into the
+  # database, through the same schema the app uses.
+  history:
+    build: ./history
+    image: xpengmate-history:local
+    profiles: ["history"]
+    environment:
+      - XPENGMATE_DATABASE_URL=postgresql://xpengmate:${DATABASE_PASS:?set DATABASE_PASS in .env}@database:5432/xpengmate
+      - SUPABASE_URL=${SUPABASE_URL:-}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY:-}
+      - XPENG_VIN=${XPENG_VIN:-}
+      - XPENG_USABLE_BATTERY_KWH=${XPENG_USABLE_BATTERY_KWH:-87.5}
+      - XPENG_CAR_NAME=${XPENG_CAR_NAME:-XPeng}
+      - TZ=${TZ:-Australia/Sydney}
+    depends_on:
+      - database
+
+  mosquitto:
+    image: eclipse-mosquitto:2
+    restart: always
+    command: mosquitto -c /mosquitto-no-auth.conf
+    volumes:
+      - mosquitto-conf:/mosquitto/config
+      - mosquitto-data:/mosquitto/data
+
+volumes:
+  xpengmate-db:
+  xpengmate-grafana-data:
+  srtm:
+  mosquitto-conf:
+  mosquitto-data:

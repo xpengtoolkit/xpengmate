@@ -11,6 +11,10 @@
     <div class="field-body">
       <div class="field">
         <div class="card-image">
+          <%!-- A charge imported from XPENG history has no position: the export
+               carries no coordinates. Nothing is invented for it, so the map is
+               simply absent instead of crashing the page on a nil position. --%>
+          <%= if @charging_process.position do %>
           <.tile_preconnect />
           <figure
             id={"map_#{@charging_process.id}_container"}
@@ -34,6 +38,11 @@
             class: "is-hidden",
             disabled: true
           )}
+          <% else %>
+          <div class="notification is-light">
+            {gettext("No GPS position was recorded for this charge, so there is no map.")}
+          </div>
+          <% end %>
         </div>
       </div>
     </div>

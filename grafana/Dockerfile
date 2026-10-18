@@ -51,4 +51,13 @@ COPY grafana/dashboards/internal/*.json /dashboards_internal/
 COPY grafana/dashboards/reports/*.json /dashboards_reports/
 COPY grafana/dashboards/*.json /dashboards/
 
+# The build context comes from a filesystem with restrictive modes, and
+# BuildKit's COPY preserves them; Grafana runs as `grafana` and must be able to
+# read the provisioning files. Normalise before dropping back.
+USER root
+RUN chmod -R a+rX /etc/grafana/provisioning /dashboards /dashboards_internal \
+    /dashboards_reports /usr/share/grafana/public/build/img /usr/share/doc/teslamate
+
+USER grafana
+
 EXPOSE 3000

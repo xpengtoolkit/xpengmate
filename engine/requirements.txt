@@ -1,0 +1,8 @@
+# The engine's runtime dependencies.
+#
+# paho-mqtt is pinned to 2.x: the vendored client uses
+# CallbackAPIVersion.VERSION2, which 1.x does not have (the integration's
+# manifest still says >=1.6.1 and that is stale).
+cryptography>=42.0.0
+paho-mqtt>=2.1.0,<3.0.0
+aiohttp>=3.9.0

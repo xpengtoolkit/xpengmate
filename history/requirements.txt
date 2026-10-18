@@ -1,0 +1,3 @@
+# psycopg 3 with a bundled libpq: the importer runs in a slim image with no
+# system Postgres client.
+psycopg[binary]>=3.1

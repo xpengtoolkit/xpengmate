@@ -9,7 +9,7 @@ defmodule TeslaMate.Updater do
     Tesla.client(
       [
         {Tesla.Middleware.BaseUrl, "https://api.github.com"},
-        {Tesla.Middleware.Headers, [{"user-agent", "TeslaMate/#{TeslaMate.Version.version()}"}]},
+        {Tesla.Middleware.Headers, [{"user-agent", "XpengMate/#{TeslaMate.Version.version()}"}]},
         Tesla.Middleware.JSON,
         {Tesla.Middleware.Logger, debug: true, level: &log_level/1}
       ],
@@ -90,7 +90,7 @@ defmodule TeslaMate.Updater do
   ## Private
 
   defp fetch_release do
-    case get("/repos/teslamate-org/teslamate/releases/latest") do
+    case get("/repos/xpengtoolkit/xpengmate/releases/latest") do
       {:ok, %Tesla.Env{status: 200, body: body}} ->
         parse_release(body)
 

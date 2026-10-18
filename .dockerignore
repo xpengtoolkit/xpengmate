@@ -10,3 +10,5 @@ elixir/priv/static/assets
 **/node_modules
 import/
 teslamate.bck
+._*
+.DS_Store

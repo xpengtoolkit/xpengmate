@@ -7,7 +7,7 @@
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <.live_title suffix=" · TeslaMate">
+    <.live_title suffix=" · XpengMate">
       {assigns[:page_title] || "Home"}
     </.live_title>
     <link phx-track-static rel="stylesheet" href={Routes.static_path(@conn, "/assets/app.css")} />
@@ -69,7 +69,7 @@
         <div class="navbar-brand">
           <a class="navbar-item" href={Routes.static_path(@conn, "/")}>
             {img_tag(Routes.static_path(@conn, "/images/logo.svg"),
-              alt: "TeslaMate",
+              alt: "XpengMate",
               width: "90px"
             )}
           </a>
@@ -155,7 +155,7 @@
             <p class="subtitle is-6">
               {raw(
                 gettext(
-                  "To ensure that your <strong>Tesla API tokens are stored securely</strong>, an encryption key must be provided to TeslaMate via the <code>ENCRYPTION_KEY</code> environment variable. Otherwise, a <strong>login will be required after every restart</strong>."
+                  "To ensure that your <strong>Tesla API tokens are stored securely</strong>, an encryption key must be provided to XpengMate via the <code>ENCRYPTION_KEY</code> environment variable. Otherwise, a <strong>login will be required after every restart</strong>."
                 )
               )}
             </p>
@@ -187,7 +187,7 @@
     <footer class="footer">
       <div class="content has-text-centered">
         <%= if update do %>
-          <%= link to: "https://github.com/teslamate-org/teslamate/releases",
+          <%= link to: "https://github.com/xpengtoolkit/xpengmate/releases",
               class: "button is-rounded is-text is-small has-text-grey", type: "button",
               target: "_blank", rel: "noopener noreferrer" do %>
             <span class="icon"><i class="mdi mdi-gift"></i></span>
@@ -195,7 +195,7 @@
           <% end %>
         <% end %>
         <p class="legal is-size-7 has-text-grey">
-          © the TeslaMate contributors · {gettext(
+          © the TeslaMate contributors · XpengMate is a fork · {gettext(
             "Free software under the AGPL-3.0-or-later, with ABSOLUTELY NO WARRANTY; you may redistribute it under its terms"
           )} · <a href={Routes.legal_path(@conn, :notice)}>NOTICE</a>
           · <a href={Routes.legal_path(@conn, :license)}>LICENSE</a>

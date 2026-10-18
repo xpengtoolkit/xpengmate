@@ -75,3 +75,19 @@ config/*.env
 
 # Codegraph
 .codegraph/
+
+# XpengMate stack: secrets and runtime state live outside git
+.env
+/xpengmate.db
+data/engine/certs/*
+!data/engine/certs/.gitkeep
+data/engine/secrets/*
+!data/engine/secrets/.gitkeep
+data/engine/state/
+data/engine/sim/
+import/
+
+# Python (engine)
+__pycache__/
+*.pyc
+.venv/
