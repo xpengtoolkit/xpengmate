@@ -39,6 +39,26 @@ functional gain. So the engine keeps it, and speaks TeslaMate's own "third-party
 API provider" protocol to the fork. The fork therefore stays close to upstream:
 its diff is branding, the history importer's schema concession, and configuration.
 
+## Where live telemetry comes from
+
+The engine has two interchangeable live sources, because XPENG allows **one
+session per account**:
+
+* **`XPENG_SOURCE=xpeng`** - the engine is the XPENG client: app-cert mTLS, the
+  tenant key pool, account tokens, the MQTT subscription, token refresh and
+  short-lived credential minting. This is the self-contained path; it needs the
+  car's own credentials.
+* **`XPENG_SOURCE=ha`** - the engine subscribes to the `state_changed` events of
+  an xpengtoolkit integration over Home Assistant's websocket and rebuilds the
+  same telemetry tree the native path produces. The integration owns the
+  session (and its renewal); the engine only reads. This is the deployment in
+  use while XpengMate does not hold an XPENG account of its own.
+
+Both feed the same state store and provider, so TeslaMate cannot tell them
+apart. The HA source deliberately takes its data timestamp from the
+integration's `last_data_update`, so a sleeping car is reported asleep rather
+than "freshly heard".
+
 ## The provider contract
 
 TeslaMate 4.x can be pointed at any server that answers, in Tesla's shapes:
