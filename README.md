@@ -252,6 +252,8 @@ disk - the API cannot serve them without a user token) into `data/exports/`, the
 runs the importer. Point `XPENG_EXPORT_ZIP` at the directory and the newest zip
 is picked automatically.
 
+![Drive stats](docs/screenshots/drive-stats.png)
+
 ![Battery health](docs/screenshots/battery-health.png)
 
 ## Grafana branding
