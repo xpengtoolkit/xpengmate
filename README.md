@@ -126,10 +126,20 @@ XPENG_HA_ENTITY_PREFIX=xpeng_800783
 ```
 
 The relay forwards TeslaMate's read routes and the streaming websocket to the
-integration's provider, answers the token endpoint locally, and adds two pieces
-of XPENG-specific enrichment: the **outside temperature** comes from a Home
-Assistant sensor when configured, and the `XOS` firmware prefix is stripped so
-version changes are recorded once (not as fake updates).
+integration's provider, answers the token endpoint locally, and adds three
+pieces of XPENG-specific enrichment:
+
+* the **outside temperature** comes from a Home Assistant sensor when configured;
+* the `XOS` firmware prefix is stripped so version changes are recorded once
+  (not as fake updates);
+* a **parked car is reported as asleep**: the provider keeps saying "online" and
+  its own threshold is two hours, so the relay watches the integration's
+  `sensor.<prefix>_polling_status` (`Active` = awake, `Silent` = parked and
+  quiet) and returns the Tesla "vehicle unavailable" response while asleep,
+  which is what makes TeslaMate enter its normal sleep/suspend behaviour.
+  Configure with `XPENG_SLEEP_STATUS_URL`, `XPENG_SLEEP_STATUS_TOKEN` and
+  `XPENG_SLEEP_STATUS_ENTITY`; without it the fallback is
+  `XPENG_ASLEEP_AFTER` seconds of telemetry silence (default 900).
 
 ## Settings in the app
 
@@ -258,6 +268,7 @@ Measured on the reference car (XPENG G6 RWD, VIN `…800783`):
 |---|---|
 | Engine provider contract (token, products, vehicle_data, websocket) | offline test suite passes |
 | Live logging through the xpengtoolkit 0.6.16 provider relay | upstream healthy, stream connected, positions written |
+| Parked-car sleep detection | relay reports `asleep` from `polling_status: silent`; TeslaMate logs `Start / :asleep`, state row written; wakes on `Active` |
 | Sign-in through the engine | `Starting logger for 'XPENG 800783'`, `Real online detected` |
 | History imported (EVConduit, 2026-08-13 → 2026-10-17) | 343 drives, 25,995 positions, 104 charges, 22,957 charge samples, 645 states |
 | Export enrichment (positions with SoC/odometer/range) | ~93% of imported positions |

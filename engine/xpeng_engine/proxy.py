@@ -47,6 +47,8 @@ class ProviderProxy:
         auth_path: str = "/oauth2/v3",
         timeout: float = 15.0,
         outside_temp: Any = None,
+        asleep_after_seconds: float = 900.0,
+        sleep_status: Any = None,
     ) -> None:
         self.upstream_url = upstream_url.rstrip("/")
         self._upstream_token = upstream_token
@@ -66,6 +68,16 @@ class ProviderProxy:
         self.frames = 0
         self._last_error: str | None = None
         self._last_outside_temp: float | None = None
+        #: Telemetry staleness as reported by the upstream provider; used to
+        #: turn a parked car into "asleep" much sooner than its two-hour default.
+        self._asleep_after = max(60.0, float(asleep_after_seconds))
+        #: Optional SleepStatus reader: the integration's polling status is a
+        #: more reliable awake/asleep signal than telemetry age.
+        self._sleep_status = sleep_status
+        self._upstream_data_age: float | None = None
+        self._upstream_state: str | None = None
+        self._reported_state: str | None = None
+        self._state_task: asyncio.Task[None] | None = None
 
     # -- lifecycle --------------------------------------------
 
@@ -85,6 +97,7 @@ class ProviderProxy:
         )
         app.router.add_get("/streaming/", self._handle_stream)
         app.router.add_get("/streaming", self._handle_stream)
+        self._state_task = asyncio.create_task(self._state_loop(), name="relay-state")
         self._runner = web.AppRunner(app, access_log=None)
         await self._runner.setup()
         self._site = web.TCPSite(self._runner, self._bind, self._port)
@@ -98,6 +111,13 @@ class ProviderProxy:
         )
 
     async def async_stop(self) -> None:
+        if self._state_task is not None:
+            self._state_task.cancel()
+            try:
+                await self._state_task
+            except (asyncio.CancelledError, Exception):  # noqa: BLE001
+                pass
+            self._state_task = None
         if self._runner is not None:
             await self._runner.cleanup()
             self._runner = None
@@ -157,6 +177,11 @@ class ProviderProxy:
                 "requests": self.requests,
                 "stream_frames": self.frames,
                 "last_error": self._last_error,
+                "reported_state": self._reported_state,
+                "polling_status": getattr(self._sleep_status, "raw_status", None),
+                "polling_asleep": getattr(self._sleep_status, "is_asleep", None),
+                "data_age_seconds": self._upstream_data_age,
+                "asleep_after_seconds": self._asleep_after,
             }
         )
 
@@ -174,6 +199,101 @@ class ProviderProxy:
         )
 
     # -- passthrough -----------------------------------------
+
+    async def _state_loop(self) -> None:
+        """Track the upstream provider's telemetry age for the asleep decision."""
+        while True:
+            try:
+                if self._sleep_status is not None and getattr(self._sleep_status, "enabled", False):
+                    await self._sleep_status.async_get_status()
+                assert self._session is not None
+                async with self._session.get(f"{self.upstream_url}/healthz") as response:
+                    if response.status == 200:
+                        payload = await response.json()
+                        body = payload.get("body") if isinstance(payload.get("body"), dict) else payload
+                        age = body.get("data_age_seconds")
+                        if isinstance(age, (int, float)):
+                            self._upstream_data_age = float(age)
+                        state = body.get("state") or payload.get("state")
+                        if isinstance(state, str):
+                            self._upstream_state = state
+                reported = self.reported_state()
+                if reported != self._reported_state:
+                    _LOGGER.info(
+                        "reporting car state %s (upstream %s, data age %.0fs, threshold %.0fs)",
+                        reported,
+                        self._upstream_state,
+                        self._upstream_data_age if self._upstream_data_age is not None else -1,
+                        self._asleep_after,
+                    )
+                    self._reported_state = reported
+            except asyncio.CancelledError:
+                raise
+            except Exception as exc:  # noqa: BLE001 - status must not kill the relay
+                self._last_error = str(exc)
+                _LOGGER.debug("relay state poll failed: %s", exc)
+            await asyncio.sleep(20)
+
+    def reported_state(self) -> str | None:
+        """The state TeslaMate should see: parked silence becomes asleep.
+
+        Charging or driving telemetry refreshes the upstream data age, so those
+        stay online without an explicit check here.
+        """
+        upstream = self._upstream_state or "online"
+        if upstream == "offline":
+            return "offline"
+        if self._sleep_status is not None:
+            asleep = getattr(self._sleep_status, "is_asleep", None)
+            if asleep is True:
+                return "asleep"
+            if asleep is False:
+                return "online"
+        if self._upstream_data_age is not None and self._upstream_data_age > self._asleep_after:
+            return "asleep"
+        return upstream
+
+    async def _forward_json_with_state(
+        self, path: str, query: str = ""
+    ) -> "web.Response":
+        """Forward a JSON read, replacing each vehicle's ``state`` with ours."""
+        self.requests += 1
+        url = f"{self.upstream_url}{path}"
+        if query:
+            url = f"{url}?{query}"
+        headers = {"Authorization": f"Bearer {self._upstream_token}"}
+        try:
+            assert self._session is not None
+            async with self._session.get(url, headers=headers) as response:
+                body = await response.read()
+                if response.status != 200:
+                    return web.Response(
+                        status=response.status,
+                        body=body,
+                        content_type=response.content_type,
+                    )
+        except Exception as exc:  # noqa: BLE001
+            self._last_error = str(exc)
+            _LOGGER.warning("upstream %s failed: %s", path, exc)
+            return web.json_response(
+                {"error": "upstream_unavailable", "error_description": str(exc)},
+                status=502,
+            )
+        try:
+            payload = json.loads(body)
+            state = self.reported_state()
+            if isinstance(payload.get("response"), list):
+                for vehicle in payload["response"]:
+                    if isinstance(vehicle, dict) and state:
+                        vehicle["state"] = state
+            elif isinstance(payload.get("response"), dict) and state:
+                payload["response"]["state"] = state
+            elif isinstance(payload, dict) and state:
+                payload["state"] = state
+            body = json.dumps(payload).encode()
+        except Exception:  # noqa: BLE001
+            pass
+        return web.Response(status=200, body=body, content_type="application/json")
 
     async def _forward(self, path: str, query: str = "") -> "web.Response":
         self.requests += 1
@@ -201,17 +321,29 @@ class ProviderProxy:
     async def _forward_products(self, request: "web.Request") -> "web.Response":
         if not self._authorized(request):
             return self._unauthorized()
-        return await self._forward("/api/1/products", request.query_string)
+        return await self._forward_json_with_state(
+            "/api/1/products", request.query_string
+        )
 
     async def _forward_vehicle(self, request: "web.Request") -> "web.Response":
         if not self._authorized(request):
             return self._unauthorized()
         vehicle_id = request.match_info["vehicle_id"]
-        return await self._forward(f"/api/1/vehicles/{vehicle_id}", request.query_string)
+        return await self._forward_json_with_state(
+            f"/api/1/vehicles/{vehicle_id}", request.query_string
+        )
 
     async def _forward_vehicle_data(self, request: "web.Request") -> "web.Response":
         if not self._authorized(request):
             return self._unauthorized()
+        # A real Tesla answers vehicle_data on a sleeping car with HTTP 408
+        # {"error": "vehicle unavailable: ..."}; TeslaMate keys its asleep
+        # transition off exactly that, so a parked car must not keep serving
+        # last-known data here.
+        if self.reported_state() == "asleep":
+            return web.json_response(
+                {"error": "vehicle unavailable: car is asleep"}, status=408
+            )
         vehicle_id = request.match_info["vehicle_id"]
         path = f"/api/1/vehicles/{vehicle_id}/vehicle_data"
         self.requests += 1

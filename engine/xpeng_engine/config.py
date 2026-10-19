@@ -89,6 +89,20 @@ class Config:
     #: of the provider's own weather value (e.g.
     #: sensor.xpeng_800783_weather_at_vehicle).
     outside_temp_entity: str = ""
+    #: How long (seconds) a parked car with no fresh telemetry is still reported
+    #: as "online" to the app. The provider's own threshold is two hours, which
+    #: keeps a parked XPENG looking awake; TeslaMate's asleep behaviour only
+    #: starts when the provider says asleep, so this is deliberately shorter.
+    asleep_after_seconds: float = 900.0
+    #: The integration's polling-status entity (sensor.<prefix>_polling_status)
+    #: tells us when a parked car has actually gone quiet (Silent) or is awake
+    #: (Active); this is more precise than telemetry age, which the integration's
+    #: passive polls keep resetting. Uses its own HA URL/token because the
+    #: provider source may live on a different Home Assistant than the outside
+    #: temperature sensor.
+    sleep_status_url: str = ""
+    sleep_status_token: str = ""
+    sleep_status_entity: str = ""
 
     # -- settings / administration ---------------------------------
     #: A second HTTP listener, local to the compose network, that the XpengMate
@@ -196,6 +210,10 @@ def load_config() -> Config:
         ha_token=_env("XPENG_HA_TOKEN"),
         ha_entity_prefix=_env("XPENG_HA_ENTITY_PREFIX"),
         outside_temp_entity=_env("XPENG_OUTSIDE_TEMP_ENTITY"),
+        asleep_after_seconds=_env_float("XPENG_ASLEEP_AFTER", 900.0),
+        sleep_status_url=_env("XPENG_SLEEP_STATUS_URL"),
+        sleep_status_token=_env("XPENG_SLEEP_STATUS_TOKEN"),
+        sleep_status_entity=_env("XPENG_SLEEP_STATUS_ENTITY"),
         allow_offline=_env_bool("XPENG_ALLOW_OFFLINE", False),
         simulate=_env_bool("XPENG_SIMULATE", False),
         simulate_file=_env("XPENG_SIMULATE_FILE"),

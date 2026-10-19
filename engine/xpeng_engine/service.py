@@ -29,6 +29,7 @@ from .proxy import ProviderProxy
 from .runtime import load_runtime_config
 from .mqtt_client import XPengMQTTClient
 from .outside_temp import OutsideTemperature
+from .sleep_status import SleepStatus
 from .state import EngineState
 from .teslamate_mapping import is_charging, is_driving
 from .teslamate_provider import ProviderOptions, TeslaMateProvider
@@ -77,6 +78,7 @@ class Engine:
         self._last_rest_at: float | None = None
         self._last_error: str | None = None
         self.outside_temp: OutsideTemperature | None = None
+        self.sleep_status: SleepStatus | None = None
         self._outside_temp_task: asyncio.Task[None] | None = None
 
     # -- lifecycle --------------------------------------------
@@ -89,6 +91,19 @@ class Engine:
             config=self.config, status_provider=self._admin_status
         )
         await self.admin.async_start()
+
+        self.sleep_status = SleepStatus(
+            self.config.sleep_status_url,
+            self.config.sleep_status_token,
+            self.config.sleep_status_entity,
+        )
+        if self.sleep_status.enabled:
+            await self.sleep_status.async_start()
+            _LOGGER.info(
+                "Sleep detection from %s (%s)",
+                self.config.sleep_status_url,
+                self.config.sleep_status_entity,
+            )
 
         self.outside_temp = OutsideTemperature(
             self.config.ha_url,
@@ -116,6 +131,8 @@ class Engine:
                 port=self.config.provider_port,
                 bind=self.config.provider_bind,
                 outside_temp=self.outside_temp,
+                asleep_after_seconds=self.config.asleep_after_seconds,
+                sleep_status=self.sleep_status,
             )
             await self.relay.async_start()
             _LOGGER.info(
@@ -421,6 +438,8 @@ class Engine:
             self._outside_temp_task = None
         if self.outside_temp is not None:
             await self.outside_temp.async_close()
+        if self.sleep_status is not None:
+            await self.sleep_status.async_close()
 
     def _on_ha_update(
         self,
@@ -535,6 +554,12 @@ class Engine:
             "outside_temp_entity": getattr(self.outside_temp, "entity_id", None),
             "outside_temp_c": getattr(self.outside_temp, "celsius", None),
             "outside_temp_error": getattr(self.outside_temp, "last_error", None),
+            "reported_state": getattr(self.relay, "reported_state", lambda: None)()
+            if self.relay is not None
+            else None,
+            "asleep_after_seconds": self.config.asleep_after_seconds,
+            "polling_status": getattr(self.sleep_status, "raw_status", None),
+            "polling_asleep": getattr(self.sleep_status, "is_asleep", None),
         }
         if self.relay is not None:
             status.update(
