@@ -77,6 +77,8 @@ curl -I http://localhost:4100/          # app: 200 once signed in, 302 before
 
 ## Settings in the app
 
+![XpengMate settings](docs/screenshots/xpengmate-settings.png)
+
 `/xpengmate` in the web UI is the configuration page. Everything it changes is
 applied by restarting the engine (a few seconds):
 
@@ -181,6 +183,8 @@ runs the importer. Point `XPENG_EXPORT_ZIP` at the directory and the newest zip
 is picked automatically.
 
 ## Grafana branding
+
+![Grafana home](docs/screenshots/grafana-home.png)
 
 The dashboards are TeslaMate's, rebranded: folder names, panel descriptions, the
 Home dashboard and the datasource display name all say XpengMate, and the Home
