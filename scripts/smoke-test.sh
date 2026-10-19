@@ -38,6 +38,19 @@ else
   echo "   (skipping authed engine checks: no provider token given)"
 fi
 
+say "settings page"
+scode="$(curl -s -o /tmp/xpengmate-settings.html -w '%{http_code}' "$BASE/xpengmate")"
+[[ "$scode" == "200" ]] || fail "settings page returned $scode"
+grep -q "XPENG credentials" /tmp/xpengmate-settings.html || fail "settings page rendered without its sections"
+ok "settings page (200)"
+
+say "history service"
+if [[ -n "$TOKEN" ]]; then
+  h="$(curl -fsS -H "Authorization: Bearer $TOKEN" "http://127.0.0.1:8100/status")" || fail "history /status"
+  echo "$h" | grep -q '"ok":true' || fail "history /status not ok"
+  ok "history status"
+fi
+
 say "app"
 code="$(curl -s -o /dev/null -w '%{http_code}' "$BASE/")"
 [[ "$code" == "200" || "$code" == "302" ]] || fail "app root returned $code"

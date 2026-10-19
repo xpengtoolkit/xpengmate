@@ -8,6 +8,9 @@ signing and login chain, the mTLS MQTT client with its JSON decode and
 partial-frame merging, and the mapping from XPENG's telemetry tree to the JSON
 shapes TeslaMate 4.x expects.
 
+Vendored from the **0.6.16 release** (the first release that ships the provider;
+the working-tree copy this engine was built from was byte-identical to it).
+
 | File | Upstream | sha256 |
 |---|---|---|
 | `xpeng_api.py` | `custom_components/xpeng/xpeng_api.py` | see below |

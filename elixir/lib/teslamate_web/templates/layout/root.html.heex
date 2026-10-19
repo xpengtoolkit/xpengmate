@@ -109,6 +109,14 @@
               </div>
             <% end %>
             <.link
+              navigate={Routes.live_path(@conn, TeslaMateWeb.XpengMateLive.Index)}
+              class="navbar-item  mr-5"
+            >
+              <span class="icon"><i class="mdi mdi-car-electric"></i></span>&nbsp;<span>{gettext(
+                "XpengMate"
+              )}</span>
+            </.link>
+            <.link
               navigate={Routes.live_path(@conn, TeslaMateWeb.GeoFenceLive.Index)}
               class="navbar-item  mr-5"
             >

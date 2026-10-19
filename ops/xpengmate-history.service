@@ -1,7 +1,7 @@
 # Daily EVConduit history sync for XpengMate.
 #
-# Runs the importer one-shot against the stack's database. Idempotent by design:
-# it replaces only the rows the importer itself created.
+# The history service is long-running; this only asks it to start a sync. The
+# import itself is idempotent and replaces only the rows it created.
 [Unit]
 Description=XpengMate history sync from EVConduit
 After=docker.service network-online.target
@@ -10,5 +10,6 @@ Wants=network-online.target
 [Service]
 Type=oneshot
 WorkingDirectory=/home/xpengmate/xpengmate
-ExecStart=/usr/bin/docker-compose run --rm history
-TimeoutStartSec=1800
+EnvironmentFile=/home/xpengmate/xpengmate/.env
+ExecStart=/bin/sh -c 'curl -fsS -X POST -H "Authorization: Bearer $XPENG_PROVIDER_TOKEN" http://127.0.0.1:8100/sync'
+TimeoutStartSec=120

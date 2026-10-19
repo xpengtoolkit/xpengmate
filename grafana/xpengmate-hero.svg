@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 734" width="1600" height="734" role="img" aria-label="XpengMate - XPENG G6 data logger">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0b1220"/>
+      <stop offset="0.55" stop-color="#101a2c"/>
+      <stop offset="1" stop-color="#0a1f22"/>
+    </linearGradient>
+    <linearGradient id="floor" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4cd7c4" stop-opacity="0.20"/>
+      <stop offset="1" stop-color="#4cd7c4" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="body" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e8f1f5"/>
+      <stop offset="0.6" stop-color="#b8c7cf"/>
+      <stop offset="1" stop-color="#7d8f99"/>
+    </linearGradient>
+    <linearGradient id="glass" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#9fd8e0"/>
+      <stop offset="1" stop-color="#274452"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1600" height="734" fill="url(#bg)"/>
+  <g stroke="#4cd7c4" stroke-opacity="0.05">
+    <path d="M0 120h1600M0 240h1600M0 360h1600M0 480h1600M0 600h1600"/>
+    <path d="M200 0v734M400 0v734M600 0v734M800 0v734M1000 0v734M1200 0v734M1400 0v734"/>
+  </g>
+
+  <g font-family="Inter, Helvetica, Arial, sans-serif">
+    <text x="96" y="132" fill="#ffffff" font-size="64" font-weight="800" letter-spacing="-1">Xpeng<tspan fill="#4cd7c4">Mate</tspan></text>
+    <text x="98" y="180" fill="#93a7b4" font-size="24" font-weight="500">XPENG G6 · drives, charges, battery and GPS history</text>
+    <g transform="translate(98 214)">
+      <rect x="0" y="0" width="188" height="34" rx="17" fill="#4cd7c4" fill-opacity="0.12" stroke="#4cd7c4" stroke-opacity="0.35"/>
+      <text x="20" y="23" fill="#9ff0e4" font-size="16" font-weight="600">self-hosted</text>
+      <rect x="200" y="0" width="150" height="34" rx="17" fill="#ffffff" fill-opacity="0.06" stroke="#ffffff" stroke-opacity="0.12"/>
+      <text x="220" y="23" fill="#c6d4dc" font-size="16" font-weight="600">TeslaMate fork</text>
+    </g>
+  </g>
+
+  <!-- G6 side profile -->
+  <g transform="translate(300 300)">
+    <ellipse cx="470" cy="352" rx="520" ry="46" fill="url(#floor)"/>
+    <path d="M60 300
+             C78 258 132 236 208 228
+             L330 170
+             C392 140 470 126 566 126
+             C676 126 760 142 826 172
+             L916 216
+             C972 242 1000 268 1008 300
+             C1012 320 1004 332 984 338
+             L946 344
+             C934 300 900 276 858 276
+             C812 276 774 304 762 344
+             L286 344
+             C274 302 238 276 192 276
+             C146 276 110 304 98 344
+             L76 340
+             C52 334 44 322 60 300Z"
+          fill="url(#body)"/>
+    <path d="M350 214 L444 176 C492 160 552 152 614 154 L610 210Z" fill="url(#glass)" opacity="0.9"/>
+    <path d="M636 154 C700 158 756 170 806 192 L800 214 L630 214Z" fill="url(#glass)" opacity="0.9"/>
+    <path d="M120 300 L300 290 L300 332 L104 332Z" fill="#0d1b24" opacity="0.25"/>
+    <circle cx="192" cy="344" r="62" fill="#0c1218"/>
+    <circle cx="192" cy="344" r="34" fill="#2b3a44"/>
+    <circle cx="192" cy="344" r="16" fill="#4cd7c4" fill-opacity="0.55"/>
+    <circle cx="858" cy="344" r="62" fill="#0c1218"/>
+    <circle cx="858" cy="344" r="34" fill="#2b3a44"/>
+    <circle cx="858" cy="344" r="16" fill="#4cd7c4" fill-opacity="0.55"/>
+    <path d="M1008 286 L1046 286 L1052 316 L1008 320Z" fill="#4cd7c4" fill-opacity="0.75"/>
+    <path d="M60 300 L34 296" stroke="#4cd7c4" stroke-width="6" stroke-linecap="round" opacity="0.7"/>
+    <path d="M906 232 l16 -22 8 20 18 -4 -14 24 -18 -2z" fill="#4cd7c4" opacity="0.85"/>
+  </g>
+</svg>

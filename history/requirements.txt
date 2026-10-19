@@ -1,3 +1,3 @@
-# psycopg 3 with a bundled libpq: the importer runs in a slim image with no
-# system Postgres client.
+# The history service and its importers.
 psycopg[binary]>=3.1
+aiohttp>=3.9.0

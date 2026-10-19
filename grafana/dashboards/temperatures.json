@@ -23,7 +23,7 @@
       "icon": "dashboard",
       "tags": [],
       "targetBlank": true,
-      "title": "TeslaMate",
+      "title": "XpengMate",
       "tooltip": "",
       "type": "link",
       "url": "${base_url:raw}"
@@ -786,7 +786,7 @@
   "timepicker": {},
   "timezone": "browser",
   "title": "Temperatures",
-  "uid": "teslamate-temperatures",
+  "uid": "xpengmate-temperatures",
   "version": 1,
   "weekStart": ""
 }

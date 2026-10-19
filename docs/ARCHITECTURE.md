@@ -54,8 +54,14 @@ session per account**:
   session (and its renewal); the engine only reads. This is the deployment in
   use while XpengMate does not hold an XPENG account of its own.
 
-Both feed the same state store and provider, so TeslaMate cannot tell them
-apart. The HA source deliberately takes its data timestamp from the
+There is a third, preferred source when the Home Assistant integration is the
+one holding the session: **`XPENG_SOURCE=provider`** relays the integration's own
+provider (xpengtoolkit 0.6.16+). The engine forwards `/api/1/...` and the
+streaming websocket with the integration's token, so no translation happens and
+the integration keeps ownership of auth and renewal. `XPENG_SOURCE=ha` (entity
+websocket) remains as the fallback when the provider option is not enabled.
+
+All three feed the same local endpoint, so TeslaMate cannot tell them apart. The HA source deliberately takes its data timestamp from the
 integration's `last_data_update`, so a sleeping car is reported asleep rather
 than "freshly heard".
 
@@ -117,11 +123,23 @@ live logger always has the position a charge started at. A historical charge fro
 an export has no coordinates, so the importer drops that `NOT NULL` rather than
 fabricating a latitude and longitude. Everything else keeps upstream's shape.
 
+## The settings API and the history service
+
+`/xpengmate` in the app is backed by two local services:
+
+* the **engine settings API** (port 8202, compose network only, provider token):
+  reads status and the (secret-free) configuration, writes the runtime source
+  configuration, installs XPENG credentials as files, probes a provider or HA
+  URL, and restarts the engine to apply a change;
+* the **history service** (port 8100): stores the EVConduit source
+  configuration, runs the importer as a subprocess on request, and answers
+  freshness questions from the database (`counts`, newest row per table, lag to
+  the source). It keeps its configuration and log on its own volume, mode 0600.
+
 ## Scheduled sync, export enrichment and the simulated live test
 
 * **Daily sync**: `ops/xpengmate-history.cron` (or the systemd timer beside it)
-  runs `docker-compose run --rm history` at 03:30 and appends to
-  `history-sync.log`. The import is idempotent, so a failed or repeated run
+  POSTs to the history service at 03:30 and appends to `history-sync.log`. The import is idempotent, so a failed or repeated run
   converges.
 * **Export enrichment**: EVConduit's GPS logger records where the car was but
   not how full it was; XPENG's data export is the mirror image. When

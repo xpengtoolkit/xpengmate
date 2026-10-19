@@ -1,5 +1,4 @@
-# One-shot history importer. Runs beside the stack, not inside it:
-#   docker compose run --rm history
+# The history service: EVConduit sync + data freshness for the settings page.
 FROM python:3.12-slim
 
 ENV PYTHONUNBUFFERED=1 \
@@ -13,4 +12,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-CMD ["python", "import_history.py"]
+VOLUME ["/data"]
+EXPOSE 8100
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD python -c "import urllib.request,sys;sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8100/status',timeout=4).status in (200,401) else 1)"
+
+CMD ["python", "server.py"]

@@ -1,9 +1,10 @@
 # Daily EVConduit history sync for XpengMate (user crontab; no root needed).
 #
-#   crontab -l | grep -v xpengmate-history | crontab -
-#   (crontab -l; cat ops/xpengmate-history.cron | grep -v '^#') | crontab -
+#   (crontab -l 2>/dev/null | grep -v xpengmate-history; grep -v '^#' ops/xpengmate-history.cron) | crontab -
 #
 # Or install the systemd timer in this directory instead (needs root):
 #   sudo cp ops/xpengmate-history.{service,timer} /etc/systemd/system/
 #   sudo systemctl enable --now xpengmate-history.timer
-30 3 * * * cd /home/xpengmate/xpengmate && /usr/bin/docker-compose run --rm history >> /home/xpengmate/xpengmate/history-sync.log 2>&1
+#
+# The history service is long-running; this only asks it to start a sync.
+30 3 * * * cd /home/xpengmate/xpengmate && TOKEN=$(grep '^XPENG_PROVIDER_TOKEN=' .env | cut -d= -f2) && curl -fsS -X POST -H "Authorization: Bearer $TOKEN" http://127.0.0.1:8100/sync >> history-sync.log 2>&1

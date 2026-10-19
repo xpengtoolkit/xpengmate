@@ -30,7 +30,7 @@
       "icon": "dashboard",
       "tags": [],
       "targetBlank": true,
-      "title": "TeslaMate",
+      "title": "XpengMate",
       "tooltip": "",
       "type": "link",
       "url": "${base_url:raw}"
@@ -2076,7 +2076,7 @@
   },
   "timepicker": {},
   "timezone": "browser",
-  "title": "Overview",
+  "title": "XpengMate Overview",
   "weekStart": "",
   "version": 1,
   "uid": "kOuP_Fggz"

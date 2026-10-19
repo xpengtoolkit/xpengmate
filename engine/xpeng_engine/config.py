@@ -74,12 +74,25 @@ class Config:
     provider_token: str = ""
 
     # -- data source ------------------------------------------------
-    #: "xpeng"  - authenticate to XPENG's cloud directly (native engine)
-    #: "ha"     - read live telemetry from an XPENG Home Assistant integration
+    #: "xpeng"    - authenticate to XPENG's cloud directly (native engine)
+    #: "provider" - relay a Tesla-compatible XPENG provider (xpengtoolkit 0.6.16+)
+    #: "ha"       - read live telemetry from an XPENG integration's entities
     source: str = "xpeng"
+    #: The upstream provider the relay mode points at (usually the integration's
+    #: own provider, e.g. http://homeassistant.local:8200).
+    upstream_url: str = ""
+    upstream_token: str = ""
     ha_url: str = ""
     ha_token: str = ""
     ha_entity_prefix: str = ""
+
+    # -- settings / administration ---------------------------------
+    #: A second HTTP listener, local to the compose network, that the XpengMate
+    #: settings page talks to. It never serves vehicle data.
+    admin_bind: str = "0.0.0.0"
+    admin_port: int = 8202
+    admin_token: str = ""
+    runtime_file: str = "/data/config/engine.json"
 
     # -- boot policy ------------------------------------------------
     #: Serve the Tesla-compatible API even when the XPENG credentials are not
@@ -102,6 +115,17 @@ class Config:
 
     def validate(self) -> None:
         problems: list[str] = []
+        if self.source not in ("xpeng", "provider", "ha"):
+            problems.append(f"XPENG_SOURCE must be xpeng, provider or ha (got {self.source!r})")
+        if self.source == "provider":
+            if not self.upstream_url:
+                problems.append(
+                    "XPENG_PROVIDER_UPSTREAM_URL is required when XPENG_SOURCE=provider"
+                )
+            if not self.upstream_token:
+                problems.append(
+                    "XPENG_PROVIDER_UPSTREAM_TOKEN is required when XPENG_SOURCE=provider"
+                )
         if self.source == "ha":
             if not self.ha_url:
                 problems.append("XPENG_HA_URL is required when XPENG_SOURCE=ha")
@@ -117,7 +141,7 @@ class Config:
         if not self.simulate:
             if not self.vin:
                 problems.append("XPENG_VIN is required in live mode")
-            if self.source != "ha":
+            if self.source == "xpeng":
                 # The native source is the only one that needs XPENG's own
                 # credentials; the Home Assistant source has none of its own.
                 for label, path in (
@@ -158,6 +182,12 @@ def load_config() -> Config:
         provider_port=_env_int("XPENG_PROVIDER_PORT", 8201),
         provider_token=_env("XPENG_PROVIDER_TOKEN"),
         source=_env("XPENG_SOURCE", "xpeng").lower() or "xpeng",
+        upstream_url=_env("XPENG_PROVIDER_UPSTREAM_URL"),
+        upstream_token=_env("XPENG_PROVIDER_UPSTREAM_TOKEN"),
+        admin_bind=_env("XPENG_ADMIN_BIND", "0.0.0.0"),
+        admin_port=_env_int("XPENG_ADMIN_PORT", 8202),
+        admin_token=_env("XPENG_ADMIN_TOKEN") or _env("XPENG_PROVIDER_TOKEN"),
+        runtime_file=_env("XPENG_RUNTIME_FILE", "/data/config/engine.json"),
         ha_url=_env("XPENG_HA_URL"),
         ha_token=_env("XPENG_HA_TOKEN"),
         ha_entity_prefix=_env("XPENG_HA_ENTITY_PREFIX"),

@@ -1,0 +1,575 @@
+<nav class="breadcrumb" aria-label="breadcrumbs">
+  <ul>
+    <li><.link navigate={~p"/"}>{gettext("Home")}</.link></li>
+    <li class="is-active"><.link navigate={~p"/xpengmate"}>{gettext("XpengMate")}</.link></li>
+  </ul>
+</nav>
+
+<div class="columns is-centered">
+  <div class="column is-10">
+    <h1 class="title is-3">XpengMate</h1>
+    <p class="subtitle is-6">
+      {gettext(
+        "Live source, XPENG credentials, and the EVConduit history feed. Changes are applied by restarting the engine (a few seconds)."
+      )}
+    </p>
+
+    <div class="buttons is-right">
+      <button class="button is-small is-light" phx-click="refresh">
+        <span class="icon"><i class="mdi mdi-refresh"></i></span>
+        <span>{gettext("Refresh status")}</span>
+      </button>
+    </div>
+
+    <%= if @loading do %>
+      <progress class="progress is-small is-primary" max="100"></progress>
+    <% end %>
+
+    <%!-- ===================== LIVE SOURCE ===================== --%>
+    <div class="card mb-5">
+      <header class="card-header">
+        <p class="card-header-title">
+          <span class="icon mr-2"><i class="mdi mdi-access-point"></i></span>
+          {gettext("Live data source")}
+        </p>
+      </header>
+      <div class="card-content">
+        <%= case @engine do %>
+          <% nil -> %>
+            <p class="has-text-grey">{gettext("Loading engine status…")}</p>
+          <% {:error, reason} -> %>
+            <div class="notification is-warning is-light">
+              {gettext("Engine settings API unreachable: %{reason}", reason: reason)}
+            </div>
+          <% engine when is_map(engine) -> %>
+            <div class="columns">
+              <div class="column">
+                <table class="table is-narrow is-fullwidth">
+                  <tbody>
+                    <tr>
+                      <th>{gettext("Source")}</th>
+                      <td>{source_label(engine["source"])}</td>
+                    </tr>
+                    <tr>
+                      <th>{gettext("VIN")}</th>
+                      <td>{fmt(engine["vin"])}</td>
+                    </tr>
+                    <tr>
+                      <th>{gettext("Car state")}</th>
+                      <td>
+                        <%= if engine["soc"] do %>
+                          {gettext("%{soc}% · %{km} km", soc: engine["soc"], km: engine["odometer_km"])}
+                        <% else %>
+                          <span class="tag is-light">{gettext("via upstream provider")}</span>
+                        <% end %>
+                      </td>
+                    </tr>
+                    <tr>
+                      <th>{gettext("XOS version")}</th>
+                      <td>{fmt(engine["xos_version"])}</td>
+                    </tr>
+                    <%= if engine["last_error"] do %>
+                      <tr>
+                        <th>{gettext("Last error")}</th>
+                        <td class="has-text-danger">{engine["last_error"]}</td>
+                      </tr>
+                    <% end %>
+                  </tbody>
+                </table>
+              </div>
+              <div class="column">
+                <%= if engine["upstream"] do %>
+                  <h4 class="title is-6">{gettext("Upstream provider")}</h4>
+                  <table class="table is-narrow is-fullwidth">
+                    <tbody>
+                      <tr>
+                        <th>{gettext("URL")}</th>
+                        <td><code>{engine["upstream"]["url"]}</code></td>
+                      </tr>
+                      <tr>
+                        <th>{gettext("Reachable")}</th>
+                        <td>
+                          <%= if engine["upstream"]["ok"] do %>
+                            <span class="tag is-success is-light">{gettext("yes")}</span>
+                          <% else %>
+                            <span class="tag is-danger is-light">{gettext("no")}</span>
+                          <% end %>
+                        </td>
+                      </tr>
+                      <%= if engine["upstream"]["cars"] do %>
+                        <tr>
+                          <th>{gettext("Car")}</th>
+                          <td>
+                            <%= for car <- engine["upstream"]["cars"] do %>
+                              <span class="tag is-light mr-1">{car["vin"]} · {car["state"]}</span>
+                            <% end %>
+                          </td>
+                        </tr>
+                      <% end %>
+                      <%= if engine["upstream"]["latency_ms"] do %>
+                        <tr>
+                          <th>{gettext("Latency")}</th>
+                          <td>{engine["upstream"]["latency_ms"]} ms</td>
+                        </tr>
+                      <% end %>
+                    </tbody>
+                  </table>
+                <% end %>
+              </div>
+            </div>
+
+            <h4 class="title is-6">{gettext("Installed XPENG credentials")}</h4>
+            <div class="content is-small">
+              <ul>
+                <%= for {name, info} <- engine["credentials"]["certs"] do %>
+                  <li>
+                    <%= if info["present"] do %>
+                      <span class="tag is-success is-light">{gettext("present")}</span>
+                    <% else %>
+                      <span class="tag is-light">{gettext("missing")}</span>
+                    <% end %>
+                    <code>{name}</code>
+                    <%= if info["bytes"], do: "· #{info["bytes"]} bytes" %>
+                  </li>
+                <% end %>
+                <li>
+                  <code>tenant</code> ·
+                  <%= if engine["credentials"]["tenant"]["present"] do %>
+                    <span class="tag is-success is-light">{gettext("present")}</span>
+                    {gettext("keys: %{count}, device …%{tail}",
+                      count: engine["credentials"]["tenant"]["key_count"],
+                      tail: engine["credentials"]["tenant"]["device_id_tail"]
+                    )}
+                  <% else %>
+                    <span class="tag is-light">{gettext("missing")}</span>
+                  <% end %>
+                </li>
+                <li>
+                  <code>tokens</code> ·
+                  <%= if engine["credentials"]["tokens"]["present"] do %>
+                    <span class="tag is-success is-light">{gettext("present")}</span>
+                    {fmt(engine["credentials"]["tokens"]["account"])}
+                    <%= if engine["credentials"]["tokens"]["vin"], do: "· #{engine["credentials"]["tokens"]["vin"]}" %>
+                  <% else %>
+                    <span class="tag is-light">{gettext("missing")}</span>
+                  <% end %>
+                </li>
+              </ul>
+            </div>
+        <% end %>
+
+        <hr />
+
+        <.form for={@source_form} id="source-form" phx-change="validate_source" phx-submit="save_source">
+          <div class="columns">
+            <div class="column">
+              <div class="field">
+                <label class="label">{gettext("Which source should the engine use?")}</label>
+                <div class="control">
+                  <div class="select is-fullwidth">
+                    <select name="source[source]">
+                      <option value="provider" selected={@source_form.params["source"] == "provider"}>
+                        {gettext("Home Assistant provider (xpengtoolkit 0.6.16+) — recommended")}
+                      </option>
+                      <option value="ha" selected={@source_form.params["source"] == "ha"}>
+                        {gettext("Home Assistant entities (fallback, no provider option needed)")}
+                      </option>
+                      <option value="xpeng" selected={@source_form.params["source"] == "xpeng"}>
+                        {gettext("XPENG cloud (native engine — needs the credentials below)")}
+                      </option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <%= if @source_form.params["source"] in ["provider", "ha"] do %>
+                <div class="field">
+                  <label class="label">
+                    {if @source_form.params["source"] == "provider",
+                      do: gettext("Provider URL (e.g. http://homeassistant.local:8200)"),
+                      else: gettext("Home Assistant URL (e.g. http://homeassistant.local:8123)")}
+                  </label>
+                  <div class="control">
+                    <input
+                      class="input"
+                      type="text"
+                      name={if @source_form.params["source"] == "provider", do: "source[provider_url]", else: "source[ha_url]"}
+                      value={if @source_form.params["source"] == "provider",
+                        do: @source_form.params["provider_url"],
+                        else: @source_form.params["ha_url"]}
+                      placeholder="http://"
+                    />
+                  </div>
+                </div>
+                <div class="field">
+                  <label class="label">
+                    {if @source_form.params["source"] == "provider",
+                      do: gettext("Provider token"),
+                      else: gettext("Home Assistant long-lived token")}
+                  </label>
+                  <div class="control">
+                    <input
+                      class="input"
+                      type="password"
+                      name={if @source_form.params["source"] == "provider", do: "source[provider_token]", else: "source[ha_token]"}
+                      value=""
+                      placeholder={gettext("leave empty to keep the saved token")}
+                      autocomplete="off"
+                    />
+                  </div>
+                </div>
+                <%= if @source_form.params["source"] == "ha" do %>
+                  <div class="field">
+                    <label class="label">{gettext("Entity prefix (e.g. xpeng_800783)")}</label>
+                    <div class="control">
+                      <input class="input" type="text" name="source[ha_entity_prefix]" value={@source_form.params["ha_entity_prefix"]} />
+                    </div>
+                  </div>
+                <% end %>
+              <% else %>
+                <div class="notification is-light">
+                  {gettext(
+                    "The native engine authenticates to XPENG itself. Install the credentials below, then switch the source to this."
+                  )}
+                </div>
+              <% end %>
+            </div>
+
+            <div class="column is-4">
+              <div class="field">
+                <label class="label">{gettext("VIN")}</label>
+                <div class="control">
+                  <input class="input" type="text" name="source[vin]" value={@source_form.params["vin"]} />
+                </div>
+              </div>
+              <div class="field">
+                <label class="label">{gettext("Usable battery capacity (kWh)")}</label>
+                <div class="control">
+                  <input class="input" type="text" name="source[usable_battery_kwh]" value={@source_form.params["usable_battery_kwh"]} />
+                </div>
+                <p class="help">
+                  {gettext("Only used to estimate live charge energy; XPENG does not publish it.")}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="buttons">
+            <button class="button is-primary" type="submit">
+              <span class="icon"><i class="mdi mdi-content-save"></i></span>
+              <span>{gettext("Save & apply")}</span>
+            </button>
+            <button class="button is-light" type="button" phx-click="test_source">
+              <span class="icon"><i class="mdi mdi-connection"></i></span>
+              <span>{gettext("Test source")}</span>
+            </button>
+          </div>
+        </.form>
+
+        <%= if @test_result do %>
+          <div class={"notification is-light " <> (if @test_result["ok"], do: "is-success", else: "is-danger")}>
+            <p class="has-text-weight-semibold">{gettext("Test result")}</p>
+            <pre class="is-size-7">{Jason.encode!(@test_result, pretty: true)}</pre>
+          </div>
+        <% end %>
+      </div>
+    </div>
+
+    <%!-- ===================== CREDENTIALS ===================== --%>
+    <div class="card mb-5">
+      <header class="card-header">
+        <p class="card-header-title">
+          <span class="icon mr-2"><i class="mdi mdi-certificate"></i></span>
+          {gettext("XPENG credentials (native engine)")}
+        </p>
+      </header>
+      <div class="card-content">
+        <p class="content is-small">
+          {gettext(
+            "The three app-tier PEM files, the tenant key pool, and the account token pair. They are written mode 0600 on the engine's volume and never shown again. The integration's own auth and renewal keep the token alive; this path is only used when the source is set to XPENG cloud."
+          )}
+        </p>
+        <.form
+          for={@credentials_form}
+          id="credentials-form"
+          phx-change="validate_uploads"
+          phx-submit="save_credentials"
+          multipart
+        >
+          <div class="columns is-multiline">
+            <%= for {key, label, upload} <- [
+              {"ca_chain", gettext("CA chain (ca-chain.crt)"), @uploads.ca_chain},
+              {"client_cert", gettext("Client certificate (client-cert-0.pem)"), @uploads.client_cert},
+              {"client_key", gettext("Client private key (client-key.pem)"), @uploads.client_key},
+              {"tenant", gettext("Tenant (xpeng_tenant.json)"), @uploads.tenant},
+              {"tokens", gettext("Tokens (xpeng_tokens.json)"), @uploads.tokens}
+            ] do %>
+              <div class="column is-6">
+                <div class="field">
+                  <label class="label is-small">{label}</label>
+                  <div class="control">
+                    <div class="file is-small has-name">
+                      <label class="file-label">
+                        <.live_file_input upload={upload} class="file-input" />
+                        <span class="file-cta">
+                          <span class="file-icon"><i class="mdi mdi-upload"></i></span>
+                          <span class="file-label">{gettext("Choose file")}</span>
+                        </span>
+                        <span class="file-name">
+                          {Enum.map_join(upload.entries, ", ", & &1.client_name)}
+                        </span>
+                      </label>
+                    </div>
+                  </div>
+                  <%= for error <- upload_errors(upload) do %>
+                    <p class="help is-danger">{Phoenix.Naming.humanize(error)}</p>
+                  <% end %>
+                </div>
+              </div>
+            <% end %>
+            <div class="column is-6">
+              <div class="field">
+                <label class="label is-small">{gettext("VIN (optional; read from tokens when empty)")}</label>
+                <div class="control">
+                  <input class="input is-small" type="text" name="credentials[vin]" value={@credentials_form.params["vin"]} />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="buttons">
+            <button class="button is-primary" type="submit">
+              <span class="icon"><i class="mdi mdi-lock-reset"></i></span>
+              <span>{gettext("Install credentials")}</span>
+            </button>
+          </div>
+        </.form>
+      </div>
+    </div>
+
+    <%!-- ===================== HISTORY ===================== --%>
+    <div class="card mb-5">
+      <header class="card-header">
+        <p class="card-header-title">
+          <span class="icon mr-2"><i class="mdi mdi-database-import"></i></span>
+          {gettext("History from EVConduit (xpengcardata)")}
+        </p>
+      </header>
+      <div class="card-content">
+        <%= case @history do %>
+          <% nil -> %>
+            <p class="has-text-grey">{gettext("Loading history status…")}</p>
+          <% {:error, reason} -> %>
+            <div class="notification is-warning is-light">
+              {gettext("History service unreachable: %{reason}", reason: reason)}
+            </div>
+          <% history when is_map(history) -> %>
+            <div class="columns">
+              <div class="column">
+                <table class="table is-narrow is-fullwidth">
+                  <tbody>
+                    <tr>
+                      <th>{gettext("Source")}</th>
+                      <td>
+                        <%= if history["configured"] do %>
+                          <span class="tag is-success is-light">{history["config"]["mode"]}</span>
+                          <%= if history["config"]["mode"] == "supabase" do %>
+                            <code>{history["config"]["supabase_url"]}</code>
+                          <% else %>
+                            <code>{history["config"]["api_url"]}</code>
+                          <% end %>
+                        <% else %>
+                          <span class="tag is-warning is-light">{gettext("not configured")}</span>
+                        <% end %>
+                      </td>
+                    </tr>
+                    <tr>
+                      <th>{gettext("Sync running")}</th>
+                      <td>
+                        <%= if history["running"] do %>
+                          <span class="tag is-info is-light">{gettext("yes")}</span>
+                        <% else %>
+                          <span class="tag is-light">{gettext("no")}</span>
+                        <% end %>
+                      </td>
+                    </tr>
+                    <%= if history["last_run"] && history["last_run"]["finished_at"] do %>
+                      <tr>
+                        <th>{gettext("Last sync")}</th>
+                        <td>
+                          <%= if history["last_run"]["ok"] do %>
+                            <span class="tag is-success is-light">{gettext("ok")}</span>
+                          <% else %>
+                            <span class="tag is-danger is-light">{gettext("failed")}</span>
+                          <% end %>
+                          {history["last_run"]["finished_at"]}
+                        </td>
+                      </tr>
+                    <% end %>
+                    <%= if history["lag_days"] do %>
+                      <tr>
+                        <th>{gettext("Newest data")}</th>
+                        <td>
+                          {gettext("in XPengMate database: %{db} days old",
+                            db: fmt(history["lag_days"]["database_vs_now"])
+                          )}
+                          <br />
+                          {gettext("in the EVConduit source: %{src} days old",
+                            src: fmt(history["lag_days"]["source_vs_now"])
+                          )}
+                        </td>
+                      </tr>
+                    <% end %>
+                  </tbody>
+                </table>
+              </div>
+              <div class="column">
+                <h4 class="title is-6">{gettext("Rows in XPengMate")}</h4>
+                <table class="table is-narrow is-fullwidth is-size-7">
+                  <thead>
+                    <tr>
+                      <th>{gettext("Table")}</th>
+                      <th class="has-text-right">{gettext("Rows")}</th>
+                      <th>{gettext("Newest")}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <%= for {key, label} <- [
+                      {"drives", gettext("Drives")},
+                      {"charges", gettext("Charging sessions")},
+                      {"charge_samples", gettext("Charge samples")},
+                      {"positions", gettext("Positions")},
+                      {"states", gettext("States")}
+                    ] do %>
+                      <% info = (history["database"] || %{})["tables"] || %{} %>
+                      <% row = info[key] || %{} %>
+                      <tr>
+                        <td>{label}</td>
+                        <td class="has-text-right">{(history["database"] || %{})["counts"][key] || 0}</td>
+                        <td>{age_text(row["age_hours"])}</td>
+                      </tr>
+                    <% end %>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <%= if history["database"]["error"] do %>
+              <div class="notification is-warning is-light">{history["database"]["error"]}</div>
+            <% end %>
+
+            <%= if history["last_run"] && history["last_run"]["log_tail"] do %>
+              <details class="mb-4">
+                <summary>{gettext("Last sync log")}</summary>
+                <pre class="is-size-7" style="max-height: 240px; overflow: auto;">{history["last_run"]["log_tail"]}</pre>
+              </details>
+            <% end %>
+        <% end %>
+
+        <hr />
+
+        <.form for={@history_form} id="history-form" phx-change="validate_history" phx-submit="save_history">
+          <div class="columns">
+            <div class="column is-4">
+              <div class="field">
+                <label class="label">{gettext("How should history be pulled?")}</label>
+                <div class="control">
+                  <div class="select is-fullwidth">
+                    <select name="history[mode]">
+                      <option value="supabase" selected={@history_form.params["mode"] == "supabase"}>
+                        {gettext("EVConduit database (full history, service key)")}
+                      </option>
+                      <option value="api" selected={@history_form.params["mode"] == "api"}>
+                        {gettext("xpengcardata API key (recent window + trip GPS)")}
+                      </option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+              <div class="field">
+                <label class="label">{gettext("VIN")}</label>
+                <div class="control">
+                  <input class="input" type="text" name="history[vin]" value={@history_form.params["vin"]} />
+                </div>
+              </div>
+            </div>
+
+            <div class="column">
+              <%= if @history_form.params["mode"] == "api" do %>
+                <div class="field">
+                  <label class="label">{gettext("xpengcardata API key")}</label>
+                  <div class="control">
+                    <input class="input" type="password" name="history[api_key]" value="" placeholder={gettext("leave empty to keep the saved key")} autocomplete="off" />
+                  </div>
+                  <p class="help">
+                    {gettext("Your EVConduit API key. The generated API is capped at the newest 200 trips and charges, so this imports a recent window plus each trip's GPS track — not a full backfill.")}
+                  </p>
+                </div>
+                <div class="field">
+                  <label class="label">{gettext("API base URL")}</label>
+                  <div class="control">
+                    <input class="input" type="text" name="history[api_url]" value={@history_form.params["api_url"]} placeholder="https://evconduit.com" />
+                  </div>
+                </div>
+              <% else %>
+                <div class="field">
+                  <label class="label">{gettext("Supabase URL")}</label>
+                  <div class="control">
+                    <input class="input" type="text" name="history[supabase_url]" value={@history_form.params["supabase_url"]} placeholder="https://<project>.supabase.co" />
+                  </div>
+                </div>
+                <div class="field">
+                  <label class="label">{gettext("Supabase service-role key")}</label>
+                  <div class="control">
+                    <input class="input" type="password" name="history[service_key]" value="" placeholder={gettext("leave empty to keep the saved key")} autocomplete="off" />
+                  </div>
+                  <p class="help">
+                    {gettext("Read-only use from this server only. It bypasses row-level security, so treat it as a password.")}
+                  </p>
+                </div>
+              <% end %>
+              <div class="columns">
+                <div class="column">
+                  <div class="field">
+                    <label class="label is-small">{gettext("Export zip directory")}</label>
+                    <div class="control">
+                      <input class="input is-small" type="text" name="history[export_zip]" value={@history_form.params["export_zip"]} placeholder="/data/exports" />
+                    </div>
+                    <p class="help">
+                      {gettext("Optional: XPENG export zips joined onto positions for SoC, odometer and range.")}
+                    </p>
+                  </div>
+                </div>
+                <div class="column">
+                  <div class="field">
+                    <label class="label is-small">{gettext("Usable battery (kWh)")}</label>
+                    <div class="control">
+                      <input class="input is-small" type="text" name="history[usable_battery_kwh]" value={@history_form.params["usable_battery_kwh"]} />
+                    </div>
+                  </div>
+                  <div class="field">
+                    <label class="label is-small">{gettext("Car name")}</label>
+                    <div class="control">
+                      <input class="input is-small" type="text" name="history[car_name]" value={@history_form.params["car_name"]} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="buttons">
+            <button class="button is-primary" type="submit">
+              <span class="icon"><i class="mdi mdi-content-save"></i></span>
+              <span>{gettext("Save history source")}</span>
+            </button>
+            <button class="button is-info" type="button" phx-click="sync_history">
+              <span class="icon"><i class="mdi mdi-sync"></i></span>
+              <span>{gettext("Sync now")}</span>
+            </button>
+          </div>
+        </.form>
+      </div>
+    </div>
+  </div>
+</div>

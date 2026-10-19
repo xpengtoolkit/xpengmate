@@ -25,6 +25,10 @@ services:
       - TZ=${TZ:-Australia/Sydney}
       - VIRTUAL_HOST=${VIRTUAL_HOST:-localhost}
       - TOKEN=${XPENG_PROVIDER_TOKEN:?set XPENG_PROVIDER_TOKEN in .env}
+      # The in-app Settings page talks to these two internal services.
+      - XPENGMATE_ADMIN_TOKEN=${XPENG_PROVIDER_TOKEN:?set XPENG_PROVIDER_TOKEN in .env}
+      - XPENGMATE_ENGINE_ADMIN_URL=http://engine:8202
+      - XPENGMATE_HISTORY_URL=http://history:8100
       # Distributed node, only so `docker exec ... bin/teslamate rpc` can drive
       # the provider sign-in without a browser (the sign-in is a LiveView form).
       - RELEASE_DISTRIBUTION=name
@@ -43,6 +47,7 @@ services:
     depends_on:
       - database
       - engine
+      - history
     cap_drop:
       - all
 
@@ -62,6 +67,11 @@ services:
       # "ha" reads live telemetry from an XPENG Home Assistant integration
       # instead, for accounts whose one session is already in use there.
       - XPENG_SOURCE=${XPENG_SOURCE:-xpeng}
+      - XPENG_PROVIDER_UPSTREAM_URL=${XPENG_PROVIDER_UPSTREAM_URL:-}
+      - XPENG_PROVIDER_UPSTREAM_TOKEN=${XPENG_PROVIDER_UPSTREAM_TOKEN:-}
+      - XPENG_ADMIN_PORT=8202
+      - XPENG_ADMIN_TOKEN=${XPENG_PROVIDER_TOKEN:?set XPENG_PROVIDER_TOKEN in .env}
+      - XPENG_RUNTIME_FILE=/data/config/engine.json
       - XPENG_HA_URL=${XPENG_HA_URL:-}
       - XPENG_HA_TOKEN=${XPENG_HA_TOKEN:-}
       - XPENG_HA_ENTITY_PREFIX=${XPENG_HA_ENTITY_PREFIX:-}
@@ -108,22 +118,30 @@ services:
 
   # One-shot: `docker compose run --rm history`. It writes only into the
   # database, through the same schema the app uses.
+  # The history service: configures the EVConduit source, runs the importer on
+  # demand or on a timer, and answers "how old is the data".
   history:
     build: ./history
     image: xpengmate-history:local
-    profiles: ["history"]
+    restart: always
     environment:
       - XPENGMATE_DATABASE_URL=postgresql://xpengmate:${DATABASE_PASS:?set DATABASE_PASS in .env}@database:5432/xpengmate
-      - SUPABASE_URL=${SUPABASE_URL:-}
-      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY:-}
+      - XPENGMATE_HISTORY_TOKEN=${XPENG_PROVIDER_TOKEN:?set XPENG_PROVIDER_TOKEN in .env}
       - XPENG_VIN=${XPENG_VIN:-}
       - XPENG_USABLE_BATTERY_KWH=${XPENG_USABLE_BATTERY_KWH:-87.5}
       - XPENG_CAR_NAME=${XPENG_CAR_NAME:-XPeng}
-      # Optional: an XPENG GDPR export zip fills SoC/odometer/range on positions.
-      - XPENG_EXPORT_ZIP=${XPENG_EXPORT_ZIP:-}
+      - XPENG_EXPORT_ZIP=${XPENG_EXPORT_ZIP:-/data/exports}
+      - HISTORY_CONFIG=/data/config/history.json
+      - HISTORY_LAST_RUN=/data/last_run.json
+      - HISTORY_LOG=/data/sync.log
       - TZ=${TZ:-Australia/Sydney}
     volumes:
+      - ./data/history:/data
       - ./data/exports:/data/exports
+    ports:
+      # Loopback only: the app reaches it on the compose network; cron curls the
+      # host side to trigger a sync.
+      - "127.0.0.1:8100:8100"
     depends_on:
       - database
 

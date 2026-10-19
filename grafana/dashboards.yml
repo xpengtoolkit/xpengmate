@@ -1,9 +1,9 @@
 apiVersion: 1
 
 providers:
-  - name: "teslamate"
+  - name: "xpengmate"
     orgId: 1
-    folder: TeslaMate
+    folder: XpengMate
     folderUid: Nr4ofiDZk
     type: file
     disableDeletion: false
@@ -11,9 +11,9 @@ providers:
     updateIntervalSeconds: 86400
     options:
       path: /dashboards
-  - name: "teslamate_internal"
+  - name: "xpengmate_internal"
     orgId: 1
-    folder: Internal
+    folder: XpengMate Internal
     folderUid: Nr5ofiDZk
     type: file
     disableDeletion: false
@@ -21,9 +21,9 @@ providers:
     updateIntervalSeconds: 86400
     options:
       path: /dashboards_internal
-  - name: "teslamate_reports"
+  - name: "xpengmate_reports"
     orgId: 1
-    folder: Reports
+    folder: XpengMate Reports
     folderUid: Nr6ofiDZk
     type: file
     disableDeletion: false

@@ -31,7 +31,7 @@
       "icon": "dashboard",
       "tags": [],
       "targetBlank": true,
-      "title": "TeslaMate",
+      "title": "XpengMate",
       "tooltip": "",
       "type": "link",
       "url": "${base_url:raw}"

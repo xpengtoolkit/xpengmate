@@ -42,6 +42,7 @@ defmodule TeslaMateWeb.Router do
     live_session :default do
       live "/sign_in", SignInLive.Index
       live "/settings", SettingsLive.Index
+      live "/xpengmate", XpengMateLive.Index
       live "/geo-fences", GeoFenceLive.Index
       live "/geo-fences/new", GeoFenceLive.Form
       live "/geo-fences/:id/edit", GeoFenceLive.Form

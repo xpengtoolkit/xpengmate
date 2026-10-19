@@ -1,7 +1,16 @@
 apiVersion: 1
 
-datasources:
+# The old provisioned name was `TeslaMate`. Removing it here keeps a rename from
+# leaving a second, orphaned datasource behind (the uid is preserved below, so
+# dashboard references do not move).
+deleteDatasources:
   - name: TeslaMate
+    orgId: 1
+
+datasources:
+  # The uid stays `TeslaMate`: every dashboard panel references it.
+  - name: XpengMate
+    uid: TeslaMate
     type: postgres
     url: $DATABASE_HOST:$DATABASE_PORT
     user: $DATABASE_USER

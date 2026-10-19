@@ -21,9 +21,12 @@ import time
 from datetime import datetime, timezone
 from typing import Any, Callable
 
+from .admin import AdminServer
 from .api_session import ApiSession
 from .ha_source import HaSource
 from .config import Config, ConfigError, load_config
+from .proxy import ProviderProxy
+from .runtime import load_runtime_config
 from .mqtt_client import XPengMQTTClient
 from .state import EngineState
 from .teslamate_mapping import is_charging, is_driving
@@ -63,6 +66,8 @@ class Engine:
         self.api: ApiSession | None = None
         self.mqtt: XPengMQTTClient | None = None
         self.provider: TeslaMateProvider | None = None
+        self.relay: ProviderProxy | None = None
+        self.admin: AdminServer | None = None
         self._stopping = asyncio.Event()
         self._loop: asyncio.AbstractEventLoop | None = None
         self._started_at = time.time()
@@ -76,6 +81,35 @@ class Engine:
     async def run(self) -> None:
         self._loop = asyncio.get_running_loop()
         self.state.attach_loop_scheduler(self._loop.call_soon_threadsafe)
+
+        self.admin = AdminServer(
+            config=self.config, status_provider=self._admin_status
+        )
+        await self.admin.async_start()
+
+        if self.config.source == "provider":
+            # Relay mode: the upstream (xpengtoolkit 0.6.16 provider) already
+            # speaks Tesla's shapes, so the engine forwards rather than rebuilds.
+            self.relay = ProviderProxy(
+                upstream_url=self.config.upstream_url,
+                upstream_token=self.config.upstream_token,
+                local_token=self.config.provider_token,
+                port=self.config.provider_port,
+                bind=self.config.provider_bind,
+            )
+            await self.relay.async_start()
+            _LOGGER.info(
+                "Relaying %s through the local provider port %s",
+                self.config.upstream_url,
+                self.config.provider_port,
+            )
+            tasks = [asyncio.create_task(self._status_loop(), name="status")]
+            await self._wait_for_stop(tasks)
+            if self.relay is not None:
+                await self.relay.async_stop()
+            if self.admin is not None:
+                await self.admin.async_stop()
+            return
 
         options = ProviderOptions(
             token=self.config.provider_token,
@@ -142,6 +176,8 @@ class Engine:
         await self._stop_live()
         if self.provider is not None:
             await self.provider.async_stop()
+        if self.admin is not None:
+            await self.admin.async_stop()
 
     # -- live XPENG session -----------------------------------
 
@@ -420,15 +456,74 @@ class Engine:
 
     # -- observability ----------------------------------------
 
+    def _admin_status(self) -> dict[str, Any]:
+        """What the settings page needs to see, in one call."""
+        status: dict[str, Any] = {
+            "mode": (
+                "simulate"
+                if self.config.simulate
+                else ("provider" if self.config.source == "provider" else self.config.source)
+            ),
+            "vin": self.config.vin,
+            "uptime_seconds": round(time.time() - self._started_at, 1),
+            "mqtt_connected": bool(
+                self.mqtt.connected if self.mqtt is not None else False
+            ),
+            "last_data_timestamp": (
+                self.state.last_data_timestamp.isoformat()
+                if self.state.last_data_timestamp
+                else None
+            ),
+            "soc": self.state.data.get("instant", {})
+            .get("charge", {})
+            .get("battery_soc")
+            if isinstance(self.state.data, dict)
+            else None,
+            "odometer_km": self.state.data.get("instant", {})
+            .get("odometer", {})
+            .get("total_mileage")
+            if isinstance(self.state.data, dict)
+            else None,
+            "xos_version": self.state.xos_version,
+            "last_error": self._last_error,
+        }
+        if self.relay is not None:
+            status.update(
+                {
+                    "upstream_url": self.config.upstream_url,
+                    "relay_requests": self.relay.requests,
+                    "relay_stream_frames": self.relay.frames,
+                }
+            )
+        return status
+
     async def _status_loop(self) -> None:
         while True:
             await asyncio.sleep(STATUS_INTERVAL)
             snap = self.state.snapshot()
+            if self.config.source == "provider":
+                status = {
+                    "mode": "provider",
+                    "vin": self.config.vin,
+                    "uptime_seconds": round(time.time() - self._started_at, 1),
+                    "updated_at": datetime.now(timezone.utc).isoformat(),
+                    "upstream_url": self.config.upstream_url,
+                    "provider_port": self.config.provider_port,
+                    "relay_requests": self.relay.requests if self.relay else 0,
+                    "relay_stream_frames": self.relay.frames if self.relay else 0,
+                    "last_error": self._last_error,
+                }
+                _write_json_atomic(self.config.status_file, status)
+                continue
             status = {
                 "mode": (
                     "simulate"
                     if self.config.simulate
-                    else ("ha" if self.config.source == "ha" else "live")
+                    else (
+                        "ha"
+                        if self.config.source == "ha"
+                        else ("provider" if self.config.source == "provider" else "live")
+                    )
                 ),
                 "vin": self.state.vin,
                 "uptime_seconds": round(time.time() - self._started_at, 1),
@@ -495,7 +590,8 @@ def _configure_logging(level: str) -> None:
 
 async def async_main() -> int:
     try:
-        config = load_config()
+        base = load_config()
+        config = load_runtime_config(base.runtime_file)
         config.validate()
     except ConfigError as exc:
         print(f"configuration error: {exc}", flush=True)

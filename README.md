@@ -75,7 +75,23 @@ curl -I http://localhost:4100/          # app: 200 once signed in, 302 before
 ./scripts/smoke-test.sh                 # the above, with assertions
 ```
 
-## Live data: two ways
+## Settings in the app
+
+`/xpengmate` in the web UI is the configuration page. Everything it changes is
+applied by restarting the engine (a few seconds):
+
+* **Live source** — choose the xpengtoolkit 0.6.16 provider (recommended), the
+  Home Assistant entity fallback, or the native XPENG cloud engine. Provider URL
+  and token are entered here, and "Test source" probes them before saving.
+* **XPENG credentials** — upload the three app-tier PEMs, the tenant key pool and
+  the token pair. They are written mode 0600 on the engine's volume, never shown
+  back, and the source switches to the native engine.
+* **History from EVConduit** — configure the source (the EVConduit database with
+  a service-role key, or a xpengcardata API key for the recent window), run
+  "Sync now", and read how old the data is: row counts per table, newest row per
+  table, and the lag between XPengMate's database and the EVConduit source.
+
+## Live data: three ways
 
 The engine can be the XPENG client itself, or it can read live telemetry from an
 XPENG Home Assistant integration. XPENG allows **one session per account**, so
@@ -93,11 +109,16 @@ XPENG_HA_TOKEN=<long-lived token, read-only use>
 XPENG_HA_ENTITY_PREFIX=xpeng_800783
 ```
 
-The HA source subscribes to `state_changed` over HA's websocket, reconstructs the
-same XPENG telemetry tree the native path produces, and takes the car's own
-timestamp from the integration's `last_data_update` - so a sleeping car is
-reported asleep instead of looking freshly heard. It uses the integration's own
-auth and renewal, and needs no XPENG credentials of its own.
+The **provider** source is a relay: the engine forwards TeslaMate's four read
+routes and the streaming websocket to the integration's own provider (xpengtoolkit
+0.6.16+), swapping in the integration's token. The integration owns the XPENG
+session and everything else, and XPengMate still exposes one stable local endpoint
+to the app.
+
+The **HA entities** source is the older fallback: it subscribes to `state_changed`
+over HA's websocket, reconstructs the same telemetry tree, and takes the car's own
+timestamp from `last_data_update`. It is what to use when the provider option is
+not enabled.
 
 ## XPENG credentials for the engine
 
@@ -158,6 +179,14 @@ That copies the newest export from the EVConduit host (where the zips live on
 disk - the API cannot serve them without a user token) into `data/exports/`, then
 runs the importer. Point `XPENG_EXPORT_ZIP` at the directory and the newest zip
 is picked automatically.
+
+## Grafana branding
+
+The dashboards are TeslaMate's, rebranded: folder names, panel descriptions, the
+Home dashboard and the datasource display name all say XpengMate, and the Home
+background is the XpengMate/XPENG hero instead of Tesla's marketing image. The
+datasource **uid stays `TeslaMate`** because every provisioned panel references
+it; only its display name changed.
 
 ## Verification status
 

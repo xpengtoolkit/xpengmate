@@ -23,7 +23,7 @@
       "icon": "dashboard",
       "tags": [],
       "targetBlank": true,
-      "title": "TeslaMate",
+      "title": "XpengMate",
       "tooltip": "",
       "type": "link",
       "url": "${base_url:raw}"
@@ -317,7 +317,7 @@
           "text": "7200",
           "value": "7200"
         },
-        "description": "Data used to calculate Moving Average / Percentiles is unevenly sampled in TeslaMate. To avoid biases towards more frequently sampled values, the data is bucketed. For buckets without sampled values, the last observed value is carried forward. Bucketing is not time-weighted but is a simple average. Increasing the bucket width results in a loss of accuracy.",
+        "description": "Data used to calculate Moving Average / Percentiles is unevenly sampled in XpengMate. To avoid biases towards more frequently sampled values, the data is bucketed. For buckets without sampled values, the last observed value is carried forward. Bucketing is not time-weighted but is a simple average. Increasing the bucket width results in a loss of accuracy.",
         "includeAll": false,
         "label": "Bucket Width",
         "name": "bucket_width",

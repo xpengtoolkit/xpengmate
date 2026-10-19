@@ -23,7 +23,7 @@
       "icon": "dashboard",
       "tags": [],
       "targetBlank": true,
-      "title": "TeslaMate",
+      "title": "XpengMate",
       "tooltip": "",
       "type": "link",
       "url": "${base_url:raw}"
@@ -1226,7 +1226,7 @@
           "showLineNumbers": false,
           "showMiniMap": false
         },
-        "content": "From here you can check if you have \nincomplete data of **Charges** (charges without ending date)\nIf so, you may follow the official \nguide by <a href='https://docs.teslamate.org/docs/maintenance/manually_fixing_data' target='_blank'>Manually fixing data</a>",
+        "content": "From here you can check if you have \nincomplete data of **Charges** (charges without ending date)\nIf so, you may follow the official \nguide by <a href='https://docs.xpengmate.org/docs/maintenance/manually_fixing_data' target='_blank'>Manually fixing data</a>",
         "mode": "markdown"
       },
       "pluginVersion": "13.2.1",
