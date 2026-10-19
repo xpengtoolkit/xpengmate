@@ -1455,7 +1455,8 @@
         }
       ],
       "title": "Top 10 Destinations (in this period)",
-      "type": "bargauge"
+      "type": "bargauge",
+      "description": "Destinations are the end address of drives *inside the selected time range*. The range is shared between dashboards in this Grafana session, so if you came from a 24-hour view this panel only sees those drives. Pick 'Last 12 months' in the top-right corner to see the full top 10 (Woodlands Drive 48, Sweet Pea animal Hospital 9, High Street 7, ... for the current year)."
     }
   ],
   "preload": false,
