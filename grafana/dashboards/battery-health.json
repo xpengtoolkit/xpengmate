@@ -44,7 +44,7 @@
         "type": "grafana-postgresql-datasource",
         "uid": "TeslaMate"
       },
-      "description": "Usable (new) is the custom capacity (87.5 kWh) when set. Usable (now) = sum(charge energy added) / sum(SOC increase) over the latest 100 charging sessions with at least a 5% rise. Difference = now - new.",
+      "description": "Pack: 91 kWh gross / 87.5 kWh usable (3.5 kWh buffer), so the SOC scale and the capacity estimate are against the usable 87.5 kWh. Usable (new) is the custom capacity (87.5) when set. Usable (now) = sum(charge energy added) / sum(SOC increase) over the latest 100 charging sessions with at least a 5% rise. Difference = now - new.",
       "fieldConfig": {
         "defaults": {
           "color": {
