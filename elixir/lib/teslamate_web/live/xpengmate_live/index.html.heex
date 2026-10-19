@@ -207,7 +207,7 @@
                       do: gettext("Provider token"),
                       else: gettext("Home Assistant long-lived token")}
                   </label>
-                  <div class="control">
+                  <div class="control" id={"source-token-wrap-" <> (@source_form.params["source"] || "provider")} phx-update="ignore">
                     <input
                       class="input"
                       type="password"
@@ -498,7 +498,7 @@
               <%= if @history_form.params["mode"] == "api" do %>
                 <div class="field">
                   <label class="label">{gettext("xpengcardata API key")}</label>
-                  <div class="control">
+                  <div class="control" id="history-api-key-wrap" phx-update="ignore">
                     <input class="input" type="password" name="history[api_key]" value="" placeholder={gettext("leave empty to keep the saved key")} autocomplete="off" />
                   </div>
                   <p class="help">
@@ -520,7 +520,7 @@
                 </div>
                 <div class="field">
                   <label class="label">{gettext("Supabase service-role key")}</label>
-                  <div class="control">
+                  <div class="control" id="history-service-key-wrap" phx-update="ignore">
                     <input class="input" type="password" name="history[service_key]" value="" placeholder={gettext("leave empty to keep the saved key")} autocomplete="off" />
                   </div>
                   <p class="help">

@@ -188,9 +188,10 @@ is picked automatically.
 
 The dashboards are TeslaMate's, rebranded: folder names, panel descriptions, the
 Home dashboard and the datasource display name all say XpengMate, and the Home
-background is the supplied XPENG line-up image instead of Tesla's marketing
-image (shipped as a Grafana static asset at `/public/img/xpengmate-hero.jpg`, so
-the dashboard references it with a host-independent URL). The
+background is the supplied XPENG line-up image and nothing else: the photo fills
+the dashboard (shipped as a Grafana static asset at
+`/public/img/xpengmate-hero.jpg`, referenced by a host-independent URL), with no
+logo, text or dashboard-list panel over it. The
 datasource **uid stays `TeslaMate`** because every provisioned panel references
 it; only its display name changed.
 

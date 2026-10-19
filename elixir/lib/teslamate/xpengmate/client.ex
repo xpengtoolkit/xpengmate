@@ -48,11 +48,7 @@ defmodule TeslaMate.XpengMate.Client do
   defp client do
     Tesla.client(
       [
-        {Tesla.Middleware.Headers,
-         [
-           {"authorization", "Bearer " <> token()},
-           {"content-type", "application/json"}
-         ]},
+        {Tesla.Middleware.Headers, [{"authorization", "Bearer " <> token()}]},
         Tesla.Middleware.JSON
       ],
       {Tesla.Adapter.Finch, name: TeslaMate.HTTP, receive_timeout: 25_000}

@@ -26,6 +26,7 @@ defmodule TeslaMateWeb.XpengMateLive.Index do
         page_title: gettext("XpengMate"),
         loading: true,
         hydrating: false,
+        pending_save: false,
         engine: nil,
         history: nil,
         test_result: nil,
@@ -67,9 +68,15 @@ defmodule TeslaMateWeb.XpengMateLive.Index do
 
     socket
     |> assign(loading: false, engine: engine, history: history)
-    |> hydrate_forms()
+    |> maybe_hydrate()
     |> schedule_refresh(history)
   end
+
+  # First paint hydrates the forms; after a save the persisted values must win
+  # over what the user typed, which is how the page proves the change stuck.
+  defp maybe_hydrate(%{assigns: %{hydrating: false}} = socket), do: hydrate_forms(socket)
+  defp maybe_hydrate(%{assigns: %{pending_save: true}} = socket), do: hydrate_forms(socket)
+  defp maybe_hydrate(socket), do: socket
 
   defp schedule_refresh(socket, %{"running" => true}) do
     Process.send_after(self(), :reload, 5_000)
@@ -102,11 +109,14 @@ defmodule TeslaMateWeb.XpengMateLive.Index do
 
     case Client.put_engine_config(payload) do
       {:ok, _} ->
-        Process.send_after(self(), :reload, 6_000)
+        # The engine exits and compose restarts it; poll briefly so the form
+        # re-hydrates from what was actually persisted.
+        Process.send_after(self(), :reload, 2_500)
+        Process.send_after(self(), :reload, 7_000)
 
         {:noreply,
          socket
-         |> assign(source_form: to_form(params, as: :source))
+         |> assign(source_form: to_form(params, as: :source), pending_save: true)
          |> put_flash(
            :info,
            gettext("Saved. The engine is restarting on the new source.")
@@ -117,7 +127,8 @@ defmodule TeslaMateWeb.XpengMateLive.Index do
     end
   end
 
-  def handle_event("test_source", %{"source" => params}, socket) do
+  def handle_event("test_source", params, socket) do
+    params = Map.merge(socket.assigns.source_form.params, Map.drop(params, ["value", "_target"]))
     payload =
       %{
         "source" => params["source"],
@@ -160,10 +171,12 @@ defmodule TeslaMateWeb.XpengMateLive.Index do
 
       case Client.install_credentials(payload) do
         {:ok, _} ->
-          Process.send_after(self(), :reload, 6_000)
+          Process.send_after(self(), :reload, 2_500)
+          Process.send_after(self(), :reload, 7_000)
 
           {:noreply,
            socket
+           |> assign(pending_save: true)
            |> put_flash(
              :info,
              gettext("Credentials installed. The engine is restarting with them.")
@@ -297,7 +310,7 @@ defmodule TeslaMateWeb.XpengMateLive.Index do
     |> then(fn socket ->
       if history, do: assign(socket, history_form: to_form(history, as: :history)), else: socket
     end)
-    |> assign(hydrating: true)
+    |> assign(hydrating: true, pending_save: false)
   end
 
   defp source_params(params) do

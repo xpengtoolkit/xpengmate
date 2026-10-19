@@ -142,6 +142,9 @@ class AdminServer:
             )
         if update.get("source") and update["source"] not in ("xpeng", "provider", "ha"):
             return web.json_response({"error": "invalid source"}, status=400)
+        problem = self._validate_effective(update)
+        if problem:
+            return web.json_response({"error": problem}, status=400)
         runtime.write_runtime(self.config.runtime_file, update)
         _LOGGER.info("settings updated: %s", sorted(update))
         asyncio.get_running_loop().call_later(0.4, self._restart)
@@ -213,6 +216,54 @@ class AdminServer:
     async def _handle_restart(self, request: "web.Request") -> "web.Response":
         asyncio.get_running_loop().call_later(0.4, self._restart)
         return web.json_response({"ok": True, "restarting": True})
+
+    def _validate_effective(self, update: dict[str, Any]) -> str | None:
+        """Reject a change the engine could not start with, before writing it.
+
+        The form sends only what changed, so validation merges the update over
+        the runtime file and the environment defaults - the settings that will
+        actually be in force after the restart.
+        """
+        stored = runtime.read_runtime(self.config.runtime_file)
+        effective = {**stored, **{k: v for k, v in update.items() if v not in (None, "")}}
+        source = str(effective.get("source") or self.config.source)
+
+        def value(key: str, fallback: str = "") -> str:
+            return str(effective.get(key) or fallback or "").strip()
+
+        if source == "provider":
+            missing = []
+            if not value("provider_url", self.config.upstream_url):
+                missing.append("provider URL")
+            if not value("provider_token", self.config.upstream_token):
+                missing.append("provider token")
+            if missing:
+                return (
+                    "The provider source needs a " + " and a ".join(missing) +
+                    ". Enter them and save again."
+                )
+        elif source == "ha":
+            missing = []
+            if not value("ha_url", self.config.ha_url):
+                missing.append("Home Assistant URL")
+            if not value("ha_token", self.config.ha_token):
+                missing.append("Home Assistant token")
+            if not value("ha_entity_prefix", self.config.ha_entity_prefix):
+                missing.append("entity prefix")
+            if missing:
+                return (
+                    "The Home Assistant entity source needs a " + ", ".join(missing) +
+                    ". Enter them and save again."
+                )
+        elif source == "xpeng":
+            summary = runtime.credentials_summary(self.config)
+            certs_ok = all(item.get("present") for item in summary["certs"].values())
+            if not (certs_ok and summary["tenant"].get("present") and summary["tokens"].get("present")):
+                return (
+                    "The XPENG cloud source needs the certificates, tenant and token "
+                    "files installed first."
+                )
+        return None
 
     # -- credentials ------------------------------------------
 
