@@ -63,7 +63,7 @@
           "showLineNumbers": false,
           "showMiniMap": false
         },
-        "content": "<div style=\"width:100%;height:734px;border-radius:12px;background-image:url(/public/img/xpengmate-hero.jpg);background-size:cover;background-position:center 55%;background-color:#0b1220;padding:32px;box-sizing:border-box;\"><div style=\"display:inline-block;background:rgba(8,14,22,0.58);border-radius:14px;padding:18px 26px;font-family:Inter,Helvetica,Arial,sans-serif;color:#ffffff;\"><div style=\"font-size:54px;font-weight:800;letter-spacing:-1px;line-height:1.05;\">Xpeng<span style=\"color:#4cd7c4\">Mate</span></div><div style=\"font-size:19px;font-weight:500;color:#dbe7ee;margin-top:8px;\">XPENG G6 &middot; drives, charges, battery and GPS history</div></div></div>",
+        "content": "<div style=\"width:100%;height:734px;border-radius:12px;background-image:url(/public/img/xpengmate-hero.jpg);background-size:cover;background-position:center 55%;background-color:#0b1220;padding:32px;box-sizing:border-box;\"><div style=\"display:inline-block;background:rgba(8,14,22,0.58);border-radius:14px;padding:18px 26px;font-family:Inter,Helvetica,Arial,sans-serif;color:#ffffff;\"><div style=\"font-size:54px;font-weight:800;letter-spacing:-1px;line-height:1.05;\">Xpeng<span style=\"color:#4cd7c4\">Mate</span></div><div style=\"font-size:19px;font-weight:500;color:#dbe7ee;margin-top:8px;\">XPENG &middot; drives, charges, battery and GPS history</div><div style=\"font-size:14px;font-weight:400;color:#93a4b2;margin-top:10px;\">A fork of <a href=\"https://github.com/teslamate-org/teslamate\" style=\"color:#bfe9e2;text-decoration:underline;\">TeslaMate</a></div></div></div>",
         "mode": "html"
       },
       "pluginVersion": "13.2.3",

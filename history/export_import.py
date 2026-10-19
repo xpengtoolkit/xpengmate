@@ -234,10 +234,10 @@ class Importer:
                     int(round(drive.power_min)) if drive.power_min is not None else None,
                     None,
                     None,
-                    None,
-                    None,
-                    None,
-                    None,
+                    drive.range_start,
+                    drive.range_end,
+                    drive.range_start,
+                    drive.range_end,
                     None,
                     None,
                     self.store.car_id,
@@ -333,17 +333,50 @@ class Importer:
                     None,
                     charge.range_start,
                     charge.range_end,
-                    None,
-                    None,
+                    charge.range_start,
+                    charge.range_end,
                     None,
                     None,
                 ),
             )
             charge_id = int(cur.fetchone()[0])
+            self._insert_charge_sample(cur, charge_id, charge)
             self.store.remember("export-charge", charge.key(), charge_id)
             self._last_charge_id = charge_id
         self.conn.commit()
         self.added_charges += 1
+
+    def _insert_charge_sample(self, cur, charge_id: int, charge: Charge) -> None:
+        """One synthetic charge sample.
+
+        TeslaMate classifies AC/DC from the (mode of) ``charger_phases`` in the
+        charge samples and derives battery capacity from the last sample of a
+        session. Without any samples every imported session read as DC and the
+        capacity panels stayed empty. The export only gives a 1 Hz aggregate, so
+        one sample at the end of the session is enough to describe it.
+        """
+        is_dc = charge.peak_power_kw >= 20.0
+        cur.execute(
+            """
+            INSERT INTO charges
+                (date, battery_level, usable_battery_level, charge_energy_added,
+                 charger_power, charger_phases, fast_charger_present,
+                 ideal_battery_range_km, rated_battery_range_km, charging_process_id)
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+            """,
+            (
+                dt.datetime.fromtimestamp(charge.end, dt.timezone.utc).replace(tzinfo=None),
+                charge.soc_end,
+                charge.soc_end,
+                round(charge.energy_dc_kwh or charge.energy_input_kwh, 2),
+                int(round(charge.mean_power_kw)),
+                None if is_dc else 1,
+                is_dc,
+                charge.range_end or 0,
+                charge.range_end or 0,
+                charge_id,
+            ),
+        )
 
     # -- states -----------------------------------------------
 

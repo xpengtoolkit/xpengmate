@@ -235,6 +235,8 @@ class Drive:
     power_max: float | None = None
     power_min: float | None = None
     energy_kwh: float = 0.0
+    range_start: float | None = None
+    range_end: float | None = None
 
     @property
     def duration_seconds(self) -> int:
@@ -375,6 +377,7 @@ def parse_zip(zip_path: str) -> ExportData:
                 speed_max=speed,
                 power_max=power_kw,
                 power_min=power_kw,
+                range_start=range_km,
             )
             drive_last_moving = timer
             drive_last_timer = timer
@@ -396,6 +399,10 @@ def parse_zip(zip_path: str) -> ExportData:
                 drive.odometer_start = odometer
             if drive.soc_start is None and soc is not None:
                 drive.soc_start = soc
+            if drive.range_start is None and range_km is not None:
+                drive.range_start = range_km
+            if range_km is not None:
+                drive.range_end = range_km
             drive.odometer_end = odometer or drive.odometer_end
             drive.soc_end = soc if soc is not None else drive.soc_end
         elif drive is not None:
@@ -570,6 +577,9 @@ def _merge_drives(drives: list[Drive]) -> list[Drive]:
             previous.energy_kwh = round(previous.energy_kwh + drive.energy_kwh, 2)
             previous.odometer_end = drive.odometer_end or previous.odometer_end
             previous.soc_end = drive.soc_end if drive.soc_end is not None else previous.soc_end
+            previous.range_end = drive.range_end or previous.range_end
+            if previous.range_start is None:
+                previous.range_start = drive.range_start
             previous.speed_max = max(previous.speed_max or 0, drive.speed_max or 0) or None
             if drive.power_max is not None:
                 previous.power_max = max(previous.power_max or 0, drive.power_max) or None

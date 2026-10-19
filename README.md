@@ -220,8 +220,9 @@ is picked automatically.
 
 The dashboards are TeslaMate's, rebranded: folder names, panel descriptions, the
 Home dashboard and the datasource display name all say XpengMate, and the Home
-background is the supplied XPENG line-up image with the XpengMate wordmark and
-tagline overlaid on top of it (shipped as a Grafana static asset at
+background is the supplied XPENG line-up image with the XpengMate wordmark,
+"XPENG · drives, charges, battery and GPS history" tagline and a "A fork of
+TeslaMate" credit overlaid on top of it (shipped as a Grafana static asset at
 `/public/img/xpengmate-hero.jpg`, referenced by a host-independent URL), and the
 dashboard list back beside it. The
 datasource **uid stays `TeslaMate`** because every provisioned panel references
