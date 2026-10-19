@@ -651,26 +651,24 @@
             >
               <input type="hidden" name="_csrf_token" value={Plug.CSRFProtection.get_csrf_token()} />
               <div class="field">
+                <label class="label is-small" for="export-zips">{gettext("Export zips")}</label>
                 <div class="control">
-                  <div class="file is-boxed is-small">
-                    <label class="file-label">
-                      <input
-                        class="file-input"
-                        type="file"
-                        name="files[]"
-                        multiple
-                        accept=".zip,application/zip"
-                      />
-                      <span class="file-cta">
-                        <span class="file-icon"><i class="mdi mdi-upload"></i></span>
-                        <span class="file-label">{gettext("Choose export zips")}</span>
-                      </span>
-                    </label>
-                  </div>
+                  <%!-- A native, visible file input: the browser itself shows the
+                       chosen file names / count, so picking files is never silent. --%>
+                  <input
+                    id="export-zips"
+                    class="input"
+                    type="file"
+                    name="files[]"
+                    multiple
+                    accept=".zip,application/zip"
+                    style="height:auto;padding:8px;"
+                  />
                 </div>
                 <p class="help">
                   {gettext("Up to 12 files at once; each is stored on the history service and imported once.")}
                 </p>
+                <p id="export-selection" class="has-text-info is-size-7"></p>
               </div>
 
               <div class="buttons">
@@ -683,6 +681,34 @@
                 <% end %>
               </div>
             </form>
+
+            <script>
+              (() => {
+                const form = document.getElementById("exports-form");
+                if (!form || form.dataset.selectionWired === "1") return;
+                form.dataset.selectionWired = "1";
+                const input = form.querySelector('input[type="file"]');
+                const out = document.getElementById("export-selection");
+                const render = () => {
+                  const files = Array.from(input.files || []);
+                  if (files.length === 0) {
+                    out.textContent = "";
+                    return;
+                  }
+                  const total = files.reduce((sum, file) => sum + file.size, 0);
+                  out.textContent =
+                    "Selected " +
+                    files.length +
+                    " file(s), " +
+                    (total / 1048576).toFixed(1) +
+                    " MB: " +
+                    files.map((file) => file.name).join(", ") +
+                    " — now click Upload & import.";
+                };
+                input.addEventListener("change", render);
+                render();
+              })();
+            </script>
 
             <h4 class="title is-6">{gettext("Imported export files")}</h4>
             <%= if exports["imports"] == [] do %>

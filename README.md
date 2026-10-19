@@ -154,7 +154,8 @@ never regenerated: the token pair is sealed against it.
 XPENG's GDPR data exports are rolling 30-day windows, so the useful workflow is
 "upload a handful of them". The **XPENG data export files** card on
 `/xpengmate` accepts up to 12 zips at once, posts them as a normal multipart
-form (reliable for large selections), and redirects back with an explicit
+form (reliable for large selections; the native file input and a line under it
+show exactly which files are selected), and redirects back with an explicit
 confirmation: the card then reports "new files imported", "duplicate uploads
 skipped", added/extended/covered rows, and says outright when nothing new was
 needed. It imports into the database:
