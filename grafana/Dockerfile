@@ -43,6 +43,7 @@ RUN LOGO_PATH=$(find /usr/share/grafana/public/build/static/img/ -type f -name '
     cp /usr/share/grafana/public/build/img/grafana_icon.svg "$LOGO_PATH" || true
 
 COPY grafana/favicon.png /usr/share/grafana/public/build/img/fav32.png
+COPY grafana/xpengmate-hero.jpg /usr/share/grafana/public/img/xpengmate-hero.jpg
 COPY grafana/apple-touch-icon.png /usr/share/grafana/public/build/img/apple-touch-icon.png
 
 COPY grafana/datasource.yml /etc/grafana/provisioning/datasources/
@@ -56,7 +57,7 @@ COPY grafana/dashboards/*.json /dashboards/
 # read the provisioning files. Normalise before dropping back.
 USER root
 RUN chmod -R a+rX /etc/grafana/provisioning /dashboards /dashboards_internal \
-    /dashboards_reports /usr/share/grafana/public/build/img /usr/share/doc/teslamate
+    /dashboards_reports /usr/share/grafana/public/build/img /usr/share/grafana/public/img /usr/share/doc/teslamate
 
 USER grafana
 
