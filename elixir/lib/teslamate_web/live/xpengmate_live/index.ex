@@ -303,7 +303,7 @@ defmodule TeslaMateWeb.XpengMateLive.Index do
       case socket.assigns.history do
         %{"config" => config} when is_map(config) ->
           %{
-            "mode" => config["mode"] || "supabase",
+            "mode" => config["mode"] || "api",
             "supabase_url" => config["supabase_url"] || "",
             "service_key" => "",
             "api_url" => config["api_url"] || "",

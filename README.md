@@ -88,10 +88,18 @@ applied by restarting the engine (a few seconds):
 * **XPENG credentials** — upload the three app-tier PEMs, the tenant key pool and
   the token pair. They are written mode 0600 on the engine's volume, never shown
   back, and the source switches to the native engine.
-* **History from EVConduit** — configure the source (the EVConduit database with
-  a service-role key, or a xpengcardata API key for the recent window), run
-  "Sync now", and read how old the data is: row counts per table, newest row per
-  table, and the lag between XPengMate's database and the EVConduit source.
+* **History from EVConduit** — configure the source, run "Sync now", and read
+  how old the data is: row counts per table, newest row per table, and the lag
+  between XPengMate's database and the EVConduit source.
+
+  | Who you are | What to enter | What you get |
+  |---|---|---|
+  | Normal EVConduit account | **API base URL + your xpengcardata API key** (EVConduit → History → API) | the newest 200 trips and charging sessions, with each trip's GPS track; a rolling recent window, not a backfill |
+  | Someone self-hosting EVConduit | the EVConduit Supabase URL + **service-role key** | the complete history (this is the operator credential, not something a normal user has) |
+  | No EVConduit at all | leave history unconfigured | live logging plus your XPENG export-file imports; no historical GPS before live logging started |
+
+  The service-role key bypasses row-level security; it is read-only here but
+  should be treated like a password and rotated/scoped if the host is shared.
 
 ## Live data: three ways
 

@@ -476,11 +476,11 @@
                 <div class="control">
                   <div class="select is-fullwidth">
                     <select name="history[mode]">
-                      <option value="supabase" selected={@history_form.params["mode"] == "supabase"}>
-                        {gettext("EVConduit database (full history, service key)")}
-                      </option>
                       <option value="api" selected={@history_form.params["mode"] == "api"}>
-                        {gettext("xpengcardata API key (recent window + trip GPS)")}
+                        {gettext("EVConduit API key (normal account — recent window + trip GPS)")}
+                      </option>
+                      <option value="supabase" selected={@history_form.params["mode"] == "supabase"}>
+                        {gettext("EVConduit database (self-hosted operator only — full history)")}
                       </option>
                     </select>
                   </div>
@@ -492,6 +492,11 @@
                   <input class="input" type="text" name="history[vin]" value={@history_form.params["vin"]} />
                 </div>
               </div>
+              <p class="help">
+                {gettext(
+                  "A normal EVConduit account uses its API key (History → API in your EVConduit account). The database mode is only for someone who self-hosts EVConduit and holds its Supabase service-role key. Neither is needed if you only use live data plus XPENG export files."
+                )}
+              </p>
             </div>
 
             <div class="column">
