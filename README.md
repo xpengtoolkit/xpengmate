@@ -1,41 +1,69 @@
 # XpengMate
 
-A self-hosted data logger for an **XPENG**, built on
-[TeslaMate](https://github.com/teslamate-org/teslamate) and augmented with the
-car's history from [EVConduit](https://evconduit.com).
+**A self-hosted data logger and history browser for an XPENG — a rebranded,
+XPENG-native fork of [TeslaMate](https://github.com/teslamate-org/teslamate).**
 
-TeslaMate's app, database schema, web UI and Grafana dashboards are kept; what
-changes is where the data comes from:
+XpengMate keeps everything that makes TeslaMate useful — its database schema,
+web app, MQTT/Home Assistant integration and Grafana dashboards — and replaces
+the Tesla data path with an XPENG one:
 
-* a small **XPeng engine** (Python) authenticates to XPENG's cloud, holds the
-  mTLS MQTT telemetry stream open and serves it to the fork over TeslaMate's own
-  "fleet provider" API - the same interface TeslaMate uses for a Tesla;
-* a **history importer** backfills drives, charging sessions, GPS positions and
-  states that were recorded before XpengMate existed.
+* a **live engine** (Python) either authenticates to XPENG's cloud itself or
+  relays the Tesla-compatible provider published by the
+  [xpengtoolkit](https://github.com/xpengtoolkit/xpengtoolkit) Home Assistant
+  integration (0.6.16+), then serves TeslaMate over Tesla's own "fleet provider"
+  API;
+* an optional **history import** pulls drives, charging sessions, states and GPS
+  positions from [EVConduit](https://evconduit.com) — by API key for a normal
+  account, or from its database for an operator;
+* **XPENG GDPR export files** (rolling 30-day zips) can be uploaded in the app,
+  merged, deduplicated and enriched into the history, so an owner with no
+  EVConduit account still gets historical drives and charging sessions.
 
-Nothing about the car is invented: a field the XPENG platform does not report is
-stored as `NULL`, not as zero.
+Nothing about the car is invented: a field XPENG does not report is stored as
+`NULL`, not as zero, and the UI says so.
 
-## Architecture
+![XpengMate Home dashboard](docs/screenshots/grafana-home.png)
+
+## What you get
+
+* **Live logging** from the car: positions, state (online/asleep/offline),
+  battery/range, charging sessions and drive summaries, at the cadence the
+  XPENG platform exposes (MQTT telemetry through the provider).
+* **Historical import** of drives, charges, GPS traces and states (EVConduit),
+  or of drives/charges/tyres/states from XPENG's export zips.
+* **TeslaMate's dashboards**, rebranded and 24 provisioned: Overview, Drives,
+  Drive Stats, Charges, Charging Stats, Battery Health, Efficiency, Locations,
+  Mileage, States, Timeline, Database Information and the reports folders.
+* **A settings page** at `/xpengmate` in the app for the live source, XPENG
+  credentials, outside-temperature sensor, history credentials/sync and export
+  uploads — no SSH required for day-to-day changes.
+* **Home Assistant integration** via MQTT (same topics as TeslaMate) plus a
+  branded app UI, logo and Grafana theme.
+* **EVConduit-optional**: the stack works with live data + export files alone;
+  EVConduit just adds historical GPS/backfill.
+
+## How it fits together
 
 ```
-XPENG cloud (mTLS MQTT + REST)          EVConduit history (Postgres/PostgREST)
-            |                                        |
-            v                                        v
-   engine: auth + telemetry              history: trips, charges, GPS, states
-   Tesla provider API (:8201)            one-shot importer
-            |  HTTP, TOKEN                          | SQL
-            +----------------+----------------------+
-                             v
-                  xpengmate (TeslaMate fork) :4100
-                             |
-                +------------+------------+
-                v                         v
-          Grafana :3003             MQTT -> Home Assistant
+XPENG cloud / xpengtoolkit integration          EVConduit (API key or DB)
+              |                                          |
+              v                                          v
+   engine :8201  (Tesla provider API)        history :8100 (import + freshness)
+   - provider relay (recommended)             - EVConduit API/Postgres import
+   - or native XPENG cloud engine              - XPENG export-zip import
+   - or HA entity websocket                   - derived-column backfill
+              |                                          |
+              +------------------+-----------------------+
+                                 v
+                 xpengmate app :4100  (TeslaMate Phoenix app)
+                                 |
+                 +---------------+----------------+
+                 v                                v
+          Grafana :3003                   MQTT -> Home Assistant
 ```
 
-Details, including the provider contract and the one schema concession, are in
-[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+Deeper detail — provider contract, the one schema concession, the live-source
+alternatives — is in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Quick start
 
@@ -44,213 +72,185 @@ git clone https://github.com/xpengtoolkit/xpengmate
 cd xpengmate
 cp .env.example .env
 chmod 600 .env
-# fill in the secrets: ENCRYPTION_KEY (openssl rand -hex 32), DATABASE_PASS,
+# fill in ENCRYPTION_KEY (openssl rand -hex 32), DATABASE_PASS,
 # GRAFANA_ADMIN_PASSWORD, XPENG_PROVIDER_TOKEN (openssl rand -hex 24),
 # RELEASE_COOKIE (openssl rand -hex 24)
 mkdir -p data/engine/{certs,secrets,state}
 
-# BuildKit is required: the Dockerfiles use COPY --chmod.
-DOCKER_BUILDKIT=1 docker-compose build
+DOCKER_BUILDKIT=1 docker-compose build     # BuildKit is required (COPY --chmod)
 docker-compose up -d
 docker-compose ps
 ```
 
-Open `http://<host>:4100`. The sign-in screen shows the provider token path; the
-button calls the engine's `/oauth2/v3/token` and starts the logger. From a shell:
+Open `http://<host>:4100`, sign in, and the car appears once a live source or an
+import has written data.
+
+| Port | Service |
+|---|---|
+| 4100 | XpengMate web app (sign-in, `/xpengmate` settings, dashboards in Grafana) |
+| 3003 | Grafana (admin password from `.env`) |
+| 8201 | Engine's Tesla-compatible provider API (loopback; the app talks to it) |
+| 8100 | History service (loopback; import, sync, freshness, export uploads) |
 
 ```bash
-docker exec xpengmate_xpengmate_1 \
-  bin/teslamate rpc 'IO.inspect(TeslaMate.Api.sign_in(%TeslaMate.Auth.Tokens{}))'
+curl http://localhost:8201/healthz     # engine: {"ok": true, ...}
+curl -I http://localhost:4100/         # app
+./scripts/smoke-test.sh                # assertions for engine, app, history, Grafana
 ```
 
-The car reports `offline` until the engine has XPENG credentials (next section)
-- or until the history importer has written data (the UI then shows the imported
-history immediately).
+## Live data: three ways
 
-Health checks:
+XPENG allows **one live session per account**, so these are alternatives, not
+layers. Use a dedicated account (share the car to it) for XpengMate.
 
-```bash
-curl http://localhost:8201/healthz      # engine: {"ok": true, ...}
-curl -I http://localhost:4100/          # app: 200 once signed in, 302 before
-./scripts/smoke-test.sh                 # the above, with assertions
+| Source | How | When to use |
+|---|---|---|
+| `provider` *(recommended)* | The xpengtoolkit 0.6.16+ integration's own Tesla-compatible provider is enabled in Home Assistant (port 8200); XpengMate relays it, swapping in the provider token. | You already run the xpengtoolkit integration and want one owner of the XPENG session. |
+| `xpeng` | The engine authenticates to XPENG's cloud itself with the app-tier mTLS certificates, tenant key pool and account tokens. | You want XpengMate to own the session with no Home Assistant in the path. |
+| `ha` | The engine subscribes to `state_changed` over Home Assistant's websocket and reconstructs the telemetry tree from the integration's entities. | Fallback when the provider option is not enabled. |
+
+```yaml
+# provider relay (recommended)
+XPENG_SOURCE=provider
+XPENG_PROVIDER_UPSTREAM_URL=http://<ha-host>:8200
+XPENG_PROVIDER_UPSTREAM_TOKEN=<provider token>
+
+# or native XPENG cloud
+XPENG_SOURCE=xpeng
+
+# or HA entity websocket
+XPENG_SOURCE=ha
+XPENG_HA_URL=http://<ha-host>:8123
+XPENG_HA_TOKEN=<long-lived read-only token>
+XPENG_HA_ENTITY_PREFIX=xpeng_800783
 ```
+
+The relay forwards TeslaMate's read routes and the streaming websocket to the
+integration's provider, answers the token endpoint locally, and adds two pieces
+of XPENG-specific enrichment: the **outside temperature** comes from a Home
+Assistant sensor when configured, and the `XOS` firmware prefix is stripped so
+version changes are recorded once (not as fake updates).
 
 ## Settings in the app
 
 ![XpengMate settings](docs/screenshots/xpengmate-settings.png)
 
-`/xpengmate` in the web UI is the configuration page. Everything it changes is
-applied by restarting the engine (a few seconds):
+`/xpengmate` is the configuration page; changes are applied by restarting the
+engine (a few seconds).
 
-* **Live source** — choose the xpengtoolkit 0.6.16 provider (recommended), the
-  Home Assistant entity fallback, or the native XPENG cloud engine. Provider URL
-  and token are entered here, and "Test source" probes them before saving.
-* **XPENG credentials** — upload the three app-tier PEMs, the tenant key pool and
-  the token pair. They are written mode 0600 on the engine's volume, never shown
-  back, and the source switches to the native engine.
-* **History from EVConduit** — configure the source, run "Sync now", and read
-  how old the data is: row counts per table, newest row per table, and the lag
-  between XPengMate's database and the EVConduit source.
+* **Live source** — pick provider/native/HA, enter the provider URL and token,
+  "Test source" before saving, and set the **outside-temperature entity**
+  (e.g. `sensor.xpeng_800783_weather_at_vehicle`).
+* **XPENG credentials (native engine)** — upload the three app-tier PEMs, the
+  tenant key pool and the token pair. Files are written mode `0600` on the
+  engine's volume and never shown back.
+* **History from EVConduit** — configure the source, "Sync now", and read data
+  age: per-table row counts, newest row per table and the lag to the EVConduit
+  source. See the credential table below.
+* **XPENG data export files** — upload up to 12 zips at once (normal multipart
+  form, with feedback listing the selected files); the result reports new
+  files, duplicates, added/extended/covered drives and charges, and explains
+  when nothing new was needed.
 
-  | Who you are | What to enter | What you get |
-  |---|---|---|
-  | Normal EVConduit account | **API base URL + your xpengcardata API key** (EVConduit → History → API) | the newest 200 trips and charging sessions, with each trip's GPS track; a rolling recent window, not a backfill |
-  | Someone self-hosting EVConduit | the EVConduit Supabase URL + **service-role key** | the complete history (this is the operator credential, not something a normal user has) |
-  | No EVConduit at all | leave history unconfigured | live logging plus your XPENG export-file imports; no historical GPS before live logging started |
-
-  The service-role key bypasses row-level security; it is read-only here but
-  should be treated like a password and rotated/scoped if the host is shared.
-
-## Live data: three ways
-
-The engine can be the XPENG client itself, or it can read live telemetry from an
-XPENG Home Assistant integration. XPENG allows **one session per account**, so
-these are alternatives, not layers:
-
-```yaml
-# native: the engine authenticates to XPENG itself
-XPENG_SOURCE=xpeng
-# certs/, secrets/ mounted as below
-
-# or: read the live entities of an xpengtoolkit integration over HA's API
-XPENG_SOURCE=ha
-XPENG_HA_URL=http://homeassistant.local:8123
-XPENG_HA_TOKEN=<long-lived token, read-only use>
-XPENG_HA_ENTITY_PREFIX=xpeng_800783
-```
-
-The **provider** source is a relay: the engine forwards TeslaMate's four read
-routes and the streaming websocket to the integration's own provider (xpengtoolkit
-0.6.16+), swapping in the integration's token. The integration owns the XPENG
-session and everything else, and XPengMate still exposes one stable local endpoint
-to the app.
-
-The **HA entities** source is the older fallback: it subscribes to `state_changed`
-over HA's websocket, reconstructs the same telemetry tree, and takes the car's own
-timestamp from `last_data_update`. It is what to use when the provider option is
-not enabled.
-
-## XPENG credentials for the engine
-
-The engine reads three files from `data/engine/`:
+## XPENG credentials (native engine)
 
 | Path | What it is |
 |---|---|
-| `certs/ca-chain.crt`, `certs/client-cert-0.pem`, `certs/client-key.pem` | the app-tier mTLS identity, extracted from an XPENG APK 3.7.0-3.12.0 |
-| `secrets/xpeng_tenant.json` | the tenant key pool, sealed with this install's device id |
-| `secrets/xpeng_tokens.json` | the account's access/refresh token pair |
+| `data/engine/certs/{ca-chain.crt,client-cert-0.pem,client-key.pem}` | app-tier mTLS identity extracted from an XPENG APK (3.7.0–3.12.0) |
+| `data/engine/secrets/xpeng_tenant.json` | tenant key pool, sealed with this install's device id |
+| `data/engine/secrets/xpeng_tokens.json` | the account's access/refresh token pair |
 
-All three come from the [xpengtoolkit](https://github.com/xpengtoolkit/xpengtoolkit)
-project; its README and `docs/UNATTENDED_RENEWAL.md` are the authority on
-producing them.
+These come from [xpengtoolkit](https://github.com/xpengtoolkit/xpengtoolkit);
+its README and `docs/UNATTENDED_RENEWAL.md` are the authority. The engine's
+device identity is fixed by the tenant file and never regenerated. Keep
+`XPENG_ALLOW_OFFLINE=false` so a missing credential is a startup failure rather
+than a car that quietly never logs.
 
-> **One session per XPENG account.** XPENG allows a single live session per
-> account, so the engine must not share an account with another host that is
-> also connected. Use a dedicated account for XpengMate (share the car to it from
-> your primary account). Two clients on one account evict each other in a loop.
+## History from EVConduit
 
-Set `XPENG_ALLOW_OFFLINE=false` once the files exist, so a missing credential is
-a startup failure rather than a car that quietly never logs.
+The history service imports drives, charging sessions, GPS positions, tyre
+pressures and states, and reports how stale the source is. Two credential sets:
 
-The engine's device identity is fixed by the tenant file's `deviceId` and is
-never regenerated: the token pair is sealed against it.
+| Who you are | What to enter | What you get |
+|---|---|---|
+| **Normal EVConduit account** | API base URL + your **xpengcardata API key** (EVConduit → History → API) | newest 200 trips/charging sessions with each trip's GPS track — a rolling recent window, not a full backfill |
+| **Self-hosting EVConduit** | the EVConduit **Supabase URL + service-role key** | the complete history; operator credential that bypasses RLS — treat as a password, rotate/scope it |
+| **No EVConduit** | leave unconfigured | live logging plus XPENG export-file imports; no historical GPS before live logging began |
+
+* Every imported row is tracked in `xpengmate_import`, so re-runs replace their
+  own rows and never touch what the live logger wrote.
+* Positions are only real GPS points from the owner's logger; elevation is not
+  available from XPENG and stays `NULL`.
+* Daily sync: `ops/xpengmate-history.cron` (a systemd timer sits beside it) POSTs
+  to the history service; `scripts/sync-history.sh` does the same from a shell.
+* `docker-compose run --rm history` still works as a one-shot run.
 
 ## Importing XPENG data exports
 
 ![XPENG export import](docs/screenshots/export-import.png)
 
-XPENG's GDPR data exports are rolling 30-day windows, so the useful workflow is
-"upload a handful of them". The **XPENG data export files** card on
-`/xpengmate` accepts up to 12 zips at once, posts them as a normal multipart
-form (reliable for large selections; the native file input and a line under it
-show exactly which files are selected), and redirects back with an explicit
-confirmation: the card then reports "new files imported", "duplicate uploads
-skipped", added/extended/covered rows, and says outright when nothing new was
-needed. It imports into the database:
+XPENG's GDPR exports are rolling 30-day windows, so "upload a handful" is the
+normal workflow. The app parses the three 1 Hz datasets and merges windows:
 
-* each zip is parsed for drives (speed-integrated distance, odometer, SoC
-  bounds, peak power), charging sessions (energy drawn at the wall and into the
-  pack, SoC and range bounds), hourly tyre pressures and online/asleep spans;
-* overlapping windows are merged — a drive cut at a window edge is stitched, a
-  drive described twice is kept once, and nothing is double counted;
-* records already covered by richer sources (the live logger or EVConduit, both
-  of which have GPS) are skipped, and a longer export version replaces a
-  previously truncated one;
-* the export's 1 Hz SoC/odometer/range is joined onto existing GPS positions;
-* the rated-range delta of every drive/charge, the AC/DC split, the derived
-  efficiency and the start/end addresses are filled by the backfill below - the
-  energy, battery-health, charges and locations dashboards are built on them;
-* files are remembered by content hash, so re-uploading the same zip is a no-op,
-  and the card lists every imported file with its window and row counts.
+* drives (speed-integrated distance, odometer, SoC bounds, peak power), charging
+  sessions (energy at the wall and into the pack, SoC/range bounds), hourly tyre
+  pressures and online/asleep spans;
+* two records that overlap → the longer wins; two halves cut at a window edge →
+  stitched with distance/energy summed; nothing is double counted;
+* records already covered by richer sources (live logger/EVConduit) are skipped;
+* export SoC/odometer/range is joined onto existing GPS positions;
+* files are remembered by content hash, so re-uploading is a no-op.
 
-Because the export has no GPS, an import can legitimately add **zero** rows when
-the uploaded windows are already covered by the live logger or EVConduit - the
-card says so instead of looking like a failure.
-
-Deliberately not imported: positions. The export has no coordinates, and the
-importer will not invent them.
+Deliberately **not** imported: positions. The export has no coordinates, and the
+importer will not invent them. A zero-row result is normal when the windows are
+already covered — the card says so.
 
 ## Filling TeslaMate's derived columns
 
-`history/backfill_teslamate.py` completes the rows the import could not: drive
-and charge rated ranges (from the exports, the positions table, or the SOC as a
-last resort), `charger_phases` so AC/DC is not "everything DC", the rated range
-on charge samples (battery capacity and cycles), `cars.efficiency` (km -> kWh),
-`positions.drive_id`, and the start/end/charge addresses via Nominatim
-(cached in `addresses`, 1 req/s, skipped with `--no-geocode`).
+`history/backfill_teslamate.py` (run inside the history container) completes the
+columns TeslaMate normally derives live: drive/charge rated ranges (from the
+exports, positions or SoC), `charger_phases` so AC/DC is not "everything DC",
+rated range on charge samples (battery capacity/cycles), `cars.efficiency`,
+`positions.drive_id`, and start/end/charge addresses via Nominatim (cached, 1
+req/s, `--no-geocode` to skip). It reads every uploaded zip and is idempotent:
 
 ```bash
 docker exec xpengmate_history_1 python backfill_teslamate.py
 ```
 
-It reads every zip in the uploaded export directory and is idempotent, so run
-it again after importing more exports. Import a spread of 30-day exports (they
-overlap by design) so every period is covered by at least one zip.
+It also clamps ranges to the pack's physical full range at each SoC, so the
+energy, battery-health and capacity panels stay consistent.
 
 ## Outside temperature
 
-The live source sets `climate_state.outside_temp` from a Home Assistant sensor
-(configurable in `/xpengmate` as *Outside temperature entity*, default
-`XPENG_OUTSIDE_TEMP_ENTITY`, e.g.
-`sensor.xpeng_800783_weather_at_vehicle`). TeslaMate stores that value on each
-position, so the drive/charge temperature averages and the
-*Temperature - Driving Efficiency* panel follow the sensor rather than the
-provider's own weather value.
+The provider's own weather value is replaced by a Home Assistant sensor when
+configured (*Outside temperature entity* in settings, or
+`XPENG_OUTSIDE_TEMP_ENTITY`). TeslaMate stores it per position, so drive/charge
+temperature averages and the *Temperature – Driving Efficiency* panel follow
+that sensor instead. No sensor configured → the provider's value is kept.
 
-## History import
+## Dashboards
 
-One-shot, idempotent, safe to re-run:
+TeslaMate's dashboards, rebranded and extended:
 
-```bash
-docker-compose run --rm history
-```
-
-It reads the VIN's rows from EVConduit's `xpeng_trips`, `xpeng_charging_sessions`,
-`vehicle_positions` and `xpeng_tyre_pressures` (read-only service-role access;
-set `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` in `.env`), and writes:
-
-* `drives` - distance, duration, max speed, odometer pair; elevation stays `NULL`
-* `positions` - only real GPS points from the owner's logger, attached to drives
-* `charging_processes` - both energies (into the pack, drawn at the wall), SoC
-  bounds, duration
-* `states` - `online` where there is evidence of activity, `asleep` across the
-  gaps; `offline` is never invented
-
-Every row it creates is recorded in `xpengmate_import`, so a re-run replaces its
-own rows and never touches anything the live logger wrote.
-
-Daily sync is installed as a user crontab entry (see
-`ops/xpengmate-history.cron`; a systemd timer is beside it for hosts with root).
-To also refresh the export zip that enriches positions with SoC and range:
-
-```bash
-EVCONDUIT_USER=<evconduit account id> ./scripts/sync-history.sh
-```
-
-That copies the newest export from the EVConduit host (where the zips live on
-disk - the API cannot serve them without a user token) into `data/exports/`, then
-runs the importer. Point `XPENG_EXPORT_ZIP` at the directory and the newest zip
-is picked automatically.
+* **24 provisioned dashboards** in folders `XpengMate`, `XpengMate Internal` and
+  `XpengMate Reports`; the datasource display name is `XpengMate` while its uid
+  deliberately stays `TeslaMate` so every panel reference keeps working.
+* **Home** dashboard: the supplied XPENG line-up photo with the XpengMate
+  wordmark, `XPENG · drives, charges, battery and GPS history` tagline and a
+  *"A fork of TeslaMate"* credit, beside the dashboard list.
+* **Energy** in kWh/100km: net = drive range delta × efficiency; gross = net ×
+  the measured charging-loss factor (so gross is at or above net).
+* **Battery Health**: pack is *91 kWh gross / 87.5 kWh usable* (3.5 kWh buffer).
+  "Usable (new)" is pinned to 87.5; "Usable (now)" is
+  `Σ charge energy into pack ÷ Σ SOC increase` over recent sessions with a ≥5%
+  rise — independent of the car's optimistic range estimate.
+* **Charges** shows the AC/DC split from `charger_phases` (85 AC / 19 DC on the
+  reference car) and the **Locations** page groups drives by geocoded address
+  (2 states, 12 cities, Sydney/Taree/Forster/Gold Coast…).
+* The **Firmware** stat reads the latest `updates` version with the `XOS `
+  prefix stripped (currently `5.9.5.8909`), so a source change cannot look like
+  two updates for one firmware.
 
 ![Locations](docs/screenshots/locations.png)
 
@@ -258,68 +258,65 @@ is picked automatically.
 
 ![Battery health](docs/screenshots/battery-health.png)
 
-## Grafana branding
-
-![Grafana home](docs/screenshots/grafana-home.png)
-
-The dashboards are TeslaMate's, rebranded: folder names, panel descriptions, the
-Home dashboard and the datasource display name all say XpengMate, and the Home
-background is the supplied XPENG line-up image with the XpengMate wordmark,
-"XPENG · drives, charges, battery and GPS history" tagline and a "A fork of
-TeslaMate" credit overlaid on top of it (shipped as a Grafana static asset at
-`/public/img/xpengmate-hero.jpg`, referenced by a host-independent URL), and the
-dashboard list back beside it. The
-datasource **uid stays `TeslaMate`** because every provisioned panel references
-it; only its display name changed.
-
 ## Verification status
 
-Measured on the reference car (G6 RWD, VIN `…800783`):
+Measured on the reference car (XPENG G6 RWD, VIN `…800783`):
 
 | Check | Result |
 |---|---|
-| Engine provider contract (token, products, vehicle_data, websocket) | passes offline test suite |
-| xpengmate sign-in through the engine | `Starting logger for 'XPENG 800783'` |
-| History import (EVConduit, 2026-08-13 .. 2026-10-17) | 342 drives, 25,249 positions, 104 charges, 22,957 charge samples, 641 states |
-| Export enrichment (positions with SoC/odometer/range) | 24,150 of 25,249 (95.6%) |
-| Daily sync | user crontab installed on xpengmate-host, 03:30 |
-| App pages / branding | `XpengMate` title, logo, charge pages render (incl. a charge with no GPS) |
-| Live path end to end (`XPENG_SIMULATE` replay of a real 292 km drive + charge) | drive opened/closed at 292.31 km, charging process opened, 1,279 positions written |
-| **Live car telemetry** (HA source, production integration on `.88`) | online state opened, position row written (59% / 62,142 km / GPS / TPMS), stream connected, XOS `5.9.5.8909` recorded in `updates` |
-| Native XPENG cloud source | built and unit-tested; needs a dedicated account's certs/tenant/tokens |
+| Engine provider contract (token, products, vehicle_data, websocket) | offline test suite passes |
+| Live logging through the xpengtoolkit 0.6.16 provider relay | upstream healthy, stream connected, positions written |
+| Sign-in through the engine | `Starting logger for 'XPENG 800783'`, `Real online detected` |
+| History imported (EVConduit, 2026-08-13 → 2026-10-17) | 343 drives, 25,995 positions, 104 charges, 22,957 charge samples, 645 states |
+| Export enrichment (positions with SoC/odometer/range) | ~93% of imported positions |
+| Derived columns backfill | 328 drives with rated ranges, 85 AC / 19 DC sessions, 1.65 MWh net energy |
+| Locations | 2 states (NSW 95 + QLD 4), 12 cities, top destinations populated |
+| Battery health | new 87.5 kWh, now ≈85.7 kWh (~98%), AC/DC pie |
+| Efficiency | net 19.3, gross 20.4, rated 16.6 kWh/100km |
+| Outside temperature | relay answers 19.0 °C from `sensor.xpeng_800783_weather_at_vehicle` |
+| Firmware | 5.9.5.8909 (single update row) |
+| Live path end to end (`XPENG_SIMULATE` replay) | 292 km drive opened/closed, charge opened, 1,279 positions |
+| Native XPENG cloud source | built and unit-tested; needs a dedicated account's credentials |
 
 ## What is approximate
 
 These follow from what XPENG exposes, not from how the fork is wired:
 
-* **Live charge energy** is estimated from battery percentage x usable capacity;
+* **Live charge energy** is estimated from battery percentage × usable capacity;
   XPENG does not publish a session's kWh.
-* **Outside temperature** is the weather at the car, not an ambient sensor.
+* **Outside temperature** without a configured sensor is the weather at the car,
+  not an ambient sensor reading.
 * **Drive power** is `0` while driving (XPENG does not expose motor power to the
-  integration); charging power is real and negative.
-* **Elevation, ascent, descent** are not available live or historically.
-* Fast-charging vs slow-charging is inferred from power.
+  integration); charging power is real.
+* **Elevation, ascent, descent** are unavailable live and in exports.
+* **AC vs DC** is inferred from charger phases/peak power.
+* **Battery capacity** is a computed estimate (± few kWh), not a BMS reading.
 
 ## Repository layout
 
 ```
-elixir/            TeslaMate, unchanged apart from branding and one nil guard
-grafana/           TeslaMate's dashboards (24 provisioned)
-engine/            the XPENG engine: auth, MQTT, Tesla provider API
-history/           the EVConduit history importer
-scripts/           deploy + smoke test
+elixir/            TeslaMate (Phoenix app), rebranded + XPENG settings/controller
+grafana/           TeslaMate's dashboards, rebranded, plus the XPENG hero image
+engine/            XPENG engine: provider relay, native cloud client, HA source,
+                   settings API; Tesla-compatible provider on :8201
+history/           EVConduit/export import, derived-column backfill, freshness API
+docs/              architecture, screenshots
+scripts/           deploy + smoke-test helpers
 docker-compose.yml the whole stack
-docs/              architecture
 ```
 
 ## Upstream, licence and attribution
 
-XpengMate is a fork of [TeslaMate](https://github.com/teslamate-org/teslamate),
-© the TeslaMate contributors, and stays under the **AGPL-3.0-or-later** (see
+XpengMate is a **fork of [TeslaMate](https://github.com/teslamate-org/teslamate)**,
+© the TeslaMate contributors, distributed under the **AGPL-3.0-or-later** (see
 [LICENSE](LICENSE) and [NOTICE](NOTICE)); modified files are marked as modified
-by this fork. "TeslaMate" is a trademark of its project; this fork uses it only
-to describe its origin. XpengMate is not affiliated with XPENG.
+by this fork. TeslaMate's schema, Phoenix app, MQTT topics and Grafana dashboards
+remain the work of that project — the XPENG data engine, history import and
+rebranding are this fork's additions. "TeslaMate" and "XPENG" are used only to
+describe the origin/compatibility; XpengMate is not affiliated with Tesla or
+XPENG.
 
 The engine vendors code from [xpengtoolkit](https://github.com/xpengtoolkit/xpengtoolkit)
-(also AGPL-3.0-or-later); see [engine/VENDOR.md](engine/VENDOR.md) for the exact
-revision.
+(AGPL-3.0-or-later); the exact revision is pinned in
+[engine/VENDOR.md](engine/VENDOR.md). Historical data may come from
+[EVConduit](https://evconduit.com) under that service's terms.
