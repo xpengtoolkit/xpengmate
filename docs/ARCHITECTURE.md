@@ -147,6 +147,11 @@ fabricating a latitude and longitude. Everything else keeps upstream's shape.
   joins them by exact second and fills `positions.battery_level`, `odometer`,
   `ideal/est_battery_range_km`, then re-derives each drive's start/end range.
   On the reference car that covered 24,150 of 25,249 positions (95.6%).
+* **XPENG data exports**: `/xpengmate` uploads zips to the history service,
+  `export_parser.py` streams the three 1 Hz CSVs into drives/charges/tyres/states
+  and `merge_exports/1` reconciles overlapping 30-day windows; `export_import.py`
+  inserts only what no other source already covers, records each file by sha256,
+  and joins the export's SoC/odometer/range onto existing GPS positions.
 * **Proof of the live path without XPENG**: `history/make_sim_frames.py` turns a
   real drive and a real charge from EVConduit into a replay file, and the
   engine's `XPENG_SIMULATE` mode pushes it through the same provider API a live

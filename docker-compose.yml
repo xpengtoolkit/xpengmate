@@ -134,6 +134,9 @@ services:
       - HISTORY_CONFIG=/data/config/history.json
       - HISTORY_LAST_RUN=/data/last_run.json
       - HISTORY_LOG=/data/sync.log
+      - HISTORY_EXPORT_LOG=/data/exports.log
+      - HISTORY_EXPORT_LAST_RUN=/data/export_last_run.json
+      - HISTORY_EXPORT_DIR=/data/exports/uploaded
       - TZ=${TZ:-Australia/Sydney}
     volumes:
       - ./data/history:/data

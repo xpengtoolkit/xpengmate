@@ -147,6 +147,29 @@ a startup failure rather than a car that quietly never logs.
 The engine's device identity is fixed by the tenant file's `deviceId` and is
 never regenerated: the token pair is sealed against it.
 
+## Importing XPENG data exports
+
+![XPENG export import](docs/screenshots/export-import.png)
+
+XPENG's GDPR data exports are rolling 30-day windows, so the useful workflow is
+"upload a handful of them". The **XPENG data export files** card on
+`/xpengmate` accepts up to 12 zips at once and imports them into the database:
+
+* each zip is parsed for drives (speed-integrated distance, odometer, SoC
+  bounds, peak power), charging sessions (energy drawn at the wall and into the
+  pack, SoC and range bounds), hourly tyre pressures and online/asleep spans;
+* overlapping windows are merged — a drive cut at a window edge is stitched, a
+  drive described twice is kept once, and nothing is double counted;
+* records already covered by richer sources (the live logger or EVConduit, both
+  of which have GPS) are skipped, and a longer export version replaces a
+  previously truncated one;
+* the export's 1 Hz SoC/odometer/range is joined onto existing GPS positions;
+* files are remembered by content hash, so re-uploading the same zip is a no-op,
+  and the card lists every imported file with its window and row counts.
+
+Deliberately not imported: positions. The export has no coordinates, and the
+importer will not invent them.
+
 ## History import
 
 One-shot, idempotent, safe to re-run:

@@ -235,7 +235,7 @@ class Store:
                 FROM drives d
                 WHERE d.car_id = %s
                   AND NOT EXISTS (SELECT 1 FROM xpengmate_import i
-                                  WHERE i.kind = 'drive' AND i.target_id = d.id)
+                                  WHERE i.kind IN ('drive','export-drive') AND i.target_id = d.id)
                 """,
                 (self.car_id,),
             )
@@ -249,7 +249,7 @@ class Store:
                 FROM charging_processes c
                 WHERE c.car_id = %s
                   AND NOT EXISTS (SELECT 1 FROM xpengmate_import i
-                                  WHERE i.kind = 'charging_process' AND i.target_id = c.id)
+                                  WHERE i.kind IN ('charging_process','export-charge') AND i.target_id = c.id)
                 """,
                 (self.car_id,),
             )
@@ -608,8 +608,15 @@ class Store:
     def insert_states(self, intervals: list[tuple[dt.datetime, dt.datetime, str]]) -> int:
         inserted = 0
         with self.conn.cursor() as cur:
+            cur.execute(
+                "SELECT start_date, COALESCE(end_date, start_date) FROM states WHERE car_id = %s",
+                (self.car_id,),
+            )
+            existing = [(row[0], row[1]) for row in cur.fetchall()]
             for start, end, state in intervals:
                 if end <= start:
+                    continue
+                if any(start <= other_end and end >= other_start for other_start, other_end in existing):
                     continue
                 key = f"{self.vin}:{start.isoformat()}"
                 cur.execute(
@@ -621,6 +628,7 @@ class Store:
                 )
                 state_id = int(cur.fetchone()[0])
                 self.remember("state", key, state_id)
+                existing.append((start, end))
                 inserted += 1
         self.conn.commit()
         _LOGGER.info("Imported %d states", inserted)

@@ -42,6 +42,9 @@ _LOGGER = logging.getLogger("xpengmate.history.server")
 CONFIG_PATH = os.environ.get("HISTORY_CONFIG", "/data/config/history.json")
 LAST_RUN_PATH = os.environ.get("HISTORY_LAST_RUN", "/data/last_run.json")
 LOG_PATH = os.environ.get("HISTORY_LOG", "/data/sync.log")
+EXPORT_LOG = os.environ.get("HISTORY_EXPORT_LOG", "/data/exports.log")
+EXPORT_LAST_RUN = os.environ.get("HISTORY_EXPORT_LAST_RUN", "/data/export_last_run.json")
+EXPORT_UPLOAD_DIR = os.environ.get("HISTORY_EXPORT_DIR", "/data/exports/uploaded")
 DATABASE_URL = os.environ.get("XPENGMATE_DATABASE_URL", "")
 TOKEN = os.environ.get("XPENGMATE_HISTORY_TOKEN", "")
 
@@ -178,6 +181,7 @@ class HistoryService:
     def __init__(self) -> None:
         self._process: asyncio.subprocess.Process | None = None
         self._task: asyncio.Task[Any] | None = None
+        self._export_task: asyncio.Task[Any] | None = None
         self._config = read_json(CONFIG_PATH)
         self._session: "aiohttp.ClientSession | None" = None
 
@@ -193,6 +197,8 @@ class HistoryService:
     async def stop(self) -> None:
         if self._task is not None:
             self._task.cancel()
+        if self._export_task is not None:
+            self._export_task.cancel()
         if self._session is not None:
             await self._session.close()
 
@@ -268,6 +274,154 @@ class HistoryService:
             return web.json_response({"error": "a sync is already running"}, status=409)
         self._task = asyncio.create_task(self._run_import())
         return web.json_response({"ok": True, "started": True})
+
+    # -- export zips ------------------------------------------
+
+    async def handle_exports_status(self, request: "web.Request") -> "web.Response":
+        imports: list[dict[str, Any]] = []
+        error = None
+        if DATABASE_URL:
+            try:
+                imports = await asyncio.to_thread(self._list_imports)
+            except Exception as exc:  # noqa: BLE001
+                error = str(exc)
+        payload: dict[str, Any] = {
+            "ok": True,
+            "running": self._export_task is not None and not self._export_task.done(),
+            "last_run": read_json(EXPORT_LAST_RUN),
+            "imports": imports,
+            "upload_dir": EXPORT_UPLOAD_DIR,
+        }
+        if error:
+            payload["error"] = error
+        return web.json_response(payload)
+
+    def _list_imports(self) -> list[dict[str, Any]]:
+        with psycopg.connect(DATABASE_URL, autocommit=True) as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    """
+                    SELECT filename, vin, timer_start, timer_end, samples, drives,
+                           charges, tyre_hours, imported_at
+                    FROM xpengmate_export_imports
+                    ORDER BY imported_at DESC
+                    LIMIT 100
+                    """
+                )
+                rows = cursor.fetchall()
+        return [
+            {
+                "filename": row[0],
+                "vin": row[1],
+                "timer_start": row[2],
+                "timer_end": row[3],
+                "samples": row[4],
+                "drives": row[5],
+                "charges": row[6],
+                "tyre_hours": row[7],
+                "imported_at": row[8].isoformat() if row[8] else None,
+            }
+            for row in rows
+        ]
+
+    async def handle_export_upload(self, request: "web.Request") -> "web.Response":
+        if not self._config.get("vin"):
+            return web.json_response(
+                {"error": "set the VIN in the history source first"}, status=409
+            )
+        if self._export_task is not None and not self._export_task.done():
+            return web.json_response({"error": "an import is already running"}, status=409)
+        os.makedirs(EXPORT_UPLOAD_DIR, exist_ok=True)
+        saved: list[str] = []
+        try:
+            reader = await request.multipart()
+            while True:
+                part = await reader.next()
+                if part is None:
+                    break
+                if not part.filename:
+                    continue
+                filename = os.path.basename(part.filename)
+                if not filename.lower().endswith(".zip"):
+                    return web.json_response(
+                        {"error": f"{filename} is not a .zip export"}, status=400
+                    )
+                target = os.path.join(EXPORT_UPLOAD_DIR, filename)
+                size = 0
+                with open(target, "wb") as handle:
+                    while True:
+                        chunk = await part.read_chunk(1024 * 1024)
+                        if not chunk:
+                            break
+                        size += len(chunk)
+                        handle.write(chunk)
+                _LOGGER.info("stored export %s (%d bytes)", filename, size)
+                saved.append(target)
+        except Exception as exc:  # noqa: BLE001
+            _LOGGER.warning("export upload failed", exc_info=True)
+            return web.json_response({"error": str(exc)}, status=400)
+        if not saved:
+            return web.json_response({"error": "no files in the upload"}, status=400)
+
+        self._export_task = asyncio.create_task(self._run_export_import(saved))
+        return web.json_response(
+            {"ok": True, "started": True, "files": [os.path.basename(p) for p in saved]}
+        )
+
+    async def _run_export_import(self, paths: list[str]) -> None:
+        started = _now()
+        write_json(EXPORT_LAST_RUN, {"started_at": started, "ok": None, "files": paths})
+        environment = dict(os.environ)
+        environment.update(
+            {
+                "XPENGMATE_DATABASE_URL": DATABASE_URL,
+                "XPENG_VIN": str(self._config.get("vin") or ""),
+                "XPENG_USABLE_BATTERY_KWH": str(
+                    self._config.get("usable_battery_kwh") or "87.5"
+                ),
+                "PYTHONUNBUFFERED": "1",
+            }
+        )
+        log = open(EXPORT_LOG, "a", encoding="utf-8", buffering=1)
+        log.write(f"\n=== export import started {started} ===\n")
+        summary: dict[str, Any] = {}
+        ok = False
+        try:
+            process = await asyncio.create_subprocess_exec(
+                sys.executable,
+                "export_import.py",
+                *paths,
+                cwd=os.path.dirname(os.path.abspath(__file__)),
+                env=environment,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+            )
+            stdout, _ = await process.communicate()
+            text = stdout.decode("utf-8", errors="replace")
+            log.write(text)
+            ok = process.returncode == 0
+            for line in text.splitlines():
+                if line.startswith("EXPORT_IMPORT_SUMMARY "):
+                    try:
+                        summary = json.loads(line[len("EXPORT_IMPORT_SUMMARY "):])
+                    except ValueError:
+                        summary = {}
+        except Exception as exc:  # noqa: BLE001
+            log.write(f"export import failed to start: {exc}\n")
+        finally:
+            log.close()
+        write_json(
+            EXPORT_LAST_RUN,
+            {
+                "started_at": started,
+                "finished_at": _now(),
+                "ok": ok,
+                "files": [os.path.basename(p) for p in paths],
+                "summary": summary,
+                "log_tail": _tail(EXPORT_LOG, 6000),
+            },
+        )
+        _LOGGER.info("export import finished ok=%s", ok)
 
     # -- the importer -----------------------------------------
 
@@ -351,8 +505,10 @@ async def async_main() -> int:
     )
     service = HistoryService()
     await service.start()
-    app = web.Application()
+    app = web.Application(client_max_size=512 * 1024 * 1024)
     app.router.add_get("/status", service.handle_status)
+    app.router.add_get("/exports", service.handle_exports_status)
+    app.router.add_post("/exports", service.handle_export_upload)
     app.router.add_get("/config", service.handle_get_config)
     app.router.add_put("/config", service.handle_put_config)
     app.router.add_post("/sync", service.handle_sync)

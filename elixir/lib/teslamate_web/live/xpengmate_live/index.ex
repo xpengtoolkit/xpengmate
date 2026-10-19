@@ -29,6 +29,7 @@ defmodule TeslaMateWeb.XpengMateLive.Index do
         pending_save: false,
         engine: nil,
         history: nil,
+        exports: nil,
         test_result: nil,
         active_section: "source"
       )
@@ -40,6 +41,14 @@ defmodule TeslaMateWeb.XpengMateLive.Index do
       |> allow_upload(:client_key, accept: :any, max_entries: 1, max_file_size: 2_000_000)
       |> allow_upload(:tenant, accept: :any, max_entries: 1, max_file_size: 2_000_000)
       |> allow_upload(:tokens, accept: :any, max_entries: 1, max_file_size: 2_000_000)
+      # XPENG data exports: a 30-day zip is ~5-25 MB, and several are imported
+      # together because their windows overlap.
+      |> allow_upload(:export_zips,
+        accept: :any,
+        max_entries: 12,
+        max_file_size: 300_000_000,
+        auto_upload: false
+      )
 
     # Fetched for the static render too: both services are on the compose
     # network, and a settings page that paints its status in the first frame is
@@ -65,11 +74,12 @@ defmodule TeslaMateWeb.XpengMateLive.Index do
   defp assign_status(socket) do
     engine = fetch_engine()
     history = fetch_history()
+    exports = fetch_exports()
 
     socket
-    |> assign(loading: false, engine: engine, history: history)
+    |> assign(loading: false, engine: engine, history: history, exports: exports)
     |> maybe_hydrate()
-    |> schedule_refresh(history)
+    |> schedule_refresh(history, exports)
   end
 
   # First paint hydrates the forms; after a save the persisted values must win
@@ -78,12 +88,16 @@ defmodule TeslaMateWeb.XpengMateLive.Index do
   defp maybe_hydrate(%{assigns: %{pending_save: true}} = socket), do: hydrate_forms(socket)
   defp maybe_hydrate(socket), do: socket
 
-  defp schedule_refresh(socket, %{"running" => true}) do
-    Process.send_after(self(), :reload, 5_000)
+  defp schedule_refresh(socket, history, exports) do
+    history_running = match?(%{"running" => true}, history)
+    exports_running = match?(%{"running" => true}, exports)
+
+    if history_running or exports_running do
+      Process.send_after(self(), :reload, 5_000)
+    end
+
     socket
   end
-
-  defp schedule_refresh(socket, _), do: socket
 
   # -- source ------------------------------------------------
 
@@ -195,9 +209,10 @@ defmodule TeslaMateWeb.XpengMateLive.Index do
     end
   end
 
-  def handle_event("cancel_upload", %{"key" => key}, socket) when is_binary(key) do
-    atom = safe_upload_key(key)
-    {:noreply, cancel_upload(socket, atom, :all)}
+  def handle_event("cancel_upload", params, socket) do
+    atom = safe_upload_key(params["key"] || "")
+    ref = params["ref"] || :all
+    {:noreply, cancel_upload(socket, atom, ref)}
   end
 
   # -- history -----------------------------------------------
@@ -236,6 +251,35 @@ defmodule TeslaMateWeb.XpengMateLive.Index do
     end
   end
 
+  def handle_event("import_exports", _params, socket) do
+    files =
+      consume_uploaded_entries(socket, :export_zips, fn %{path: path}, entry ->
+        {:ok, {entry.client_name, File.read!(path)}}
+      end)
+
+    if files == [] do
+      {:noreply, put_flash(socket, :error, gettext("Choose at least one export zip first."))}
+    else
+      case Client.upload_exports(files) do
+        {:ok, _} ->
+          Process.send_after(self(), :reload, 4_000)
+          Process.send_after(self(), :reload, 20_000)
+
+          {:noreply,
+           put_flash(
+             socket,
+             :info,
+             gettext("Uploaded %{count} file(s). Importing in the background; this page refreshes itself.",
+               count: length(files)
+             )
+           )}
+
+        {:error, reason} ->
+          {:noreply, put_flash(socket, :error, reason)}
+      end
+    end
+  end
+
   def handle_event("sync_history", _params, socket) do
     case Client.sync_history() do
       {:ok, _} ->
@@ -260,6 +304,13 @@ defmodule TeslaMateWeb.XpengMateLive.Index do
 
   defp fetch_history do
     case Client.history_status() do
+      {:ok, status} -> status
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp fetch_exports do
+    case Client.exports_status() do
       {:ok, status} -> status
       {:error, reason} -> {:error, reason}
     end
@@ -356,8 +407,21 @@ defmodule TeslaMateWeb.XpengMateLive.Index do
   end
 
   defp safe_upload_key(key) do
-    Enum.find(@upload_keys, :ca_chain, &(Atom.to_string(&1) == key))
+    @upload_keys
+    |> Enum.concat([:export_zips])
+    |> Enum.find(:ca_chain, &(Atom.to_string(&1) == key))
   end
+
+  defp epoch_text(nil), do: "—"
+
+  defp epoch_text(seconds) when is_integer(seconds) do
+    case DateTime.from_unix(seconds) do
+      {:ok, value} -> Calendar.strftime(value, "%Y-%m-%d %H:%M")
+      _ -> "—"
+    end
+  end
+
+  defp epoch_text(_), do: "—"
 
   defp age_text(nil), do: gettext("never")
 

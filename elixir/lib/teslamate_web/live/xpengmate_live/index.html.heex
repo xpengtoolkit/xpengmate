@@ -60,7 +60,7 @@
                         <%= if engine["soc"] do %>
                           {gettext("%{soc}% · %{km} km", soc: engine["soc"], km: engine["odometer_km"])}
                         <% else %>
-                          <span class="tag is-light">{gettext("via upstream provider")}</span>
+                          <span class="has-text-grey">{gettext("via upstream provider")}</span>
                         <% end %>
                       </td>
                     </tr>
@@ -90,9 +90,9 @@
                         <th>{gettext("Reachable")}</th>
                         <td>
                           <%= if engine["upstream"]["ok"] do %>
-                            <span class="tag is-success is-light">{gettext("yes")}</span>
+                            <span class="has-text-success has-text-weight-semibold">{gettext("yes")}</span>
                           <% else %>
-                            <span class="tag is-danger is-light">{gettext("no")}</span>
+                            <span class="has-text-danger has-text-weight-semibold">{gettext("no")}</span>
                           <% end %>
                         </td>
                       </tr>
@@ -124,9 +124,9 @@
                 <%= for {name, info} <- engine["credentials"]["certs"] do %>
                   <li>
                     <%= if info["present"] do %>
-                      <span class="tag is-success is-light">{gettext("present")}</span>
+                      <span class="has-text-success has-text-weight-semibold">{gettext("present")}</span>
                     <% else %>
-                      <span class="tag is-light">{gettext("missing")}</span>
+                      <span class="has-text-grey">{gettext("missing")}</span>
                     <% end %>
                     <code>{name}</code>
                     <%= if info["bytes"], do: "· #{info["bytes"]} bytes" %>
@@ -135,23 +135,23 @@
                 <li>
                   <code>tenant</code> ·
                   <%= if engine["credentials"]["tenant"]["present"] do %>
-                    <span class="tag is-success is-light">{gettext("present")}</span>
+                    <span class="has-text-success has-text-weight-semibold">{gettext("present")}</span>
                     {gettext("keys: %{count}, device …%{tail}",
                       count: engine["credentials"]["tenant"]["key_count"],
                       tail: engine["credentials"]["tenant"]["device_id_tail"]
                     )}
                   <% else %>
-                    <span class="tag is-light">{gettext("missing")}</span>
+                    <span class="has-text-grey">{gettext("missing")}</span>
                   <% end %>
                 </li>
                 <li>
                   <code>tokens</code> ·
                   <%= if engine["credentials"]["tokens"]["present"] do %>
-                    <span class="tag is-success is-light">{gettext("present")}</span>
+                    <span class="has-text-success has-text-weight-semibold">{gettext("present")}</span>
                     {fmt(engine["credentials"]["tokens"]["account"])}
                     <%= if engine["credentials"]["tokens"]["vin"], do: "· #{engine["credentials"]["tokens"]["vin"]}" %>
                   <% else %>
-                    <span class="tag is-light">{gettext("missing")}</span>
+                    <span class="has-text-grey">{gettext("missing")}</span>
                   <% end %>
                 </li>
               </ul>
@@ -372,14 +372,14 @@
                       <th>{gettext("Source")}</th>
                       <td>
                         <%= if history["configured"] do %>
-                          <span class="tag is-success is-light">{history["config"]["mode"]}</span>
+                          <span class="has-text-success has-text-weight-semibold">{history["config"]["mode"]}</span>
                           <%= if history["config"]["mode"] == "supabase" do %>
                             <code>{history["config"]["supabase_url"]}</code>
                           <% else %>
                             <code>{history["config"]["api_url"]}</code>
                           <% end %>
                         <% else %>
-                          <span class="tag is-warning is-light">{gettext("not configured")}</span>
+                          <span class="has-text-warning has-text-weight-semibold">{gettext("not configured")}</span>
                         <% end %>
                       </td>
                     </tr>
@@ -398,9 +398,9 @@
                         <th>{gettext("Last sync")}</th>
                         <td>
                           <%= if history["last_run"]["ok"] do %>
-                            <span class="tag is-success is-light">{gettext("ok")}</span>
+                            <span class="has-text-success has-text-weight-semibold">{gettext("ok")}</span>
                           <% else %>
-                            <span class="tag is-danger is-light">{gettext("failed")}</span>
+                            <span class="has-text-danger has-text-weight-semibold">{gettext("failed")}</span>
                           <% end %>
                           {history["last_run"]["finished_at"]}
                         </td>
@@ -569,6 +569,161 @@
             </button>
           </div>
         </.form>
+      </div>
+    </div>
+
+    <%!-- ===================== EXPORT ZIPS ===================== --%>
+    <div class="card mb-5">
+      <header class="card-header">
+        <p class="card-header-title">
+          <span class="icon mr-2"><i class="mdi mdi-file-upload"></i></span>
+          {gettext("XPENG data export files")}
+        </p>
+      </header>
+      <div class="card-content">
+        <p class="content is-small">
+          {gettext(
+            "Upload the GDPR export zips XPENG sends you (Data → Export). They are rolling 30-day windows, so uploading several is expected: the importer merges the windows and skips anything already in the database, then fills battery, odometer and range into existing GPS positions."
+          )}
+        </p>
+
+        <%= case @exports do %>
+          <% nil -> %>
+            <p class="has-text-grey">{gettext("Loading export status…")}</p>
+          <% {:error, reason} -> %>
+            <div class="notification is-warning is-light">
+              {gettext("Export status unavailable: %{reason}", reason: reason)}
+            </div>
+          <% exports when is_map(exports) -> %>
+            <%= if exports["last_run"] && exports["last_run"]["finished_at"] do %>
+              <% run = exports["last_run"] %>
+              <% summary = run["summary"] || %{} %>
+              <div class={"notification is-light " <> (if run["ok"], do: "is-success", else: "is-danger")}>
+                <p class="has-text-weight-semibold">
+                  {if run["ok"], do: gettext("Last import finished"), else: gettext("Last import failed")}
+                  <span class="is-size-7 has-text-grey">{run["finished_at"]}</span>
+                </p>
+                <%= if summary != %{} do %>
+                  <div class="content is-small">
+                    <ul>
+                      <li>{gettext("Files imported: %{n}", n: summary["files_imported"] || 0)}</li>
+                      <li>{gettext("Already imported (duplicate files): %{n}", n: summary["duplicates"] || 0)}</li>
+                      <li>
+                        {gettext("Drives: %{added} added, %{merged} extended, %{skipped} already covered",
+                          added: summary["added_drives"] || 0,
+                          merged: summary["merged_drives"] || 0,
+                          skipped: summary["skipped_drives"] || 0
+                        )}
+                      </li>
+                      <li>
+                        {gettext("Charges: %{added} added, %{skipped} already covered",
+                          added: summary["added_charges"] || 0,
+                          skipped: summary["skipped_charges"] || 0
+                        )}
+                      </li>
+                      <li>{gettext("States added: %{n}", n: summary["added_states"] || 0)}</li>
+                      <li>{gettext("Positions enriched: %{n}", n: summary["enriched_positions"] || 0)}</li>
+                    </ul>
+                  </div>
+                <% end %>
+                <%= if run["log_tail"] do %>
+                  <details>
+                    <summary>{gettext("Import log")}</summary>
+                    <pre class="is-size-7" style="max-height: 220px; overflow: auto;">{run["log_tail"]}</pre>
+                  </details>
+                <% end %>
+              </div>
+            <% end %>
+
+            <.form
+              for={%{}}
+              id="exports-form"
+              phx-change="validate_uploads"
+              phx-submit="import_exports"
+              multipart
+            >
+              <div class="field">
+                <div class="control">
+                  <div class="file is-boxed is-small">
+                    <label class="file-label">
+                      <.live_file_input upload={@uploads.export_zips} class="file-input" />
+                      <span class="file-cta">
+                        <span class="file-icon"><i class="mdi mdi-upload"></i></span>
+                        <span class="file-label">{gettext("Choose export zips")}</span>
+                      </span>
+                    </label>
+                  </div>
+                </div>
+                <p class="help">
+                  {gettext("Up to 12 files at once; each is stored on the history service and imported once.")}
+                </p>
+              </div>
+
+              <%= if @uploads.export_zips.entries != [] do %>
+                <table class="table is-narrow is-fullwidth is-size-7">
+                  <tbody>
+                    <%= for entry <- @uploads.export_zips.entries do %>
+                      <tr>
+                        <td>{entry.client_name}</td>
+                        <td class="has-text-right">{entry.client_size} bytes</td>
+                        <td>
+                          <button
+                            type="button"
+                            class="button is-small is-light"
+                            phx-click="cancel_upload"
+                            phx-value-key="export_zips"
+                            phx-value-ref={entry.ref}
+                          >
+                            {gettext("remove")}
+                          </button>
+                        </td>
+                      </tr>
+                    <% end %>
+                  </tbody>
+                </table>
+              <% end %>
+
+              <div class="buttons">
+                <button class="button is-primary" type="submit" disabled={@uploads.export_zips.entries == []}>
+                  <span class="icon"><i class="mdi mdi-database-import"></i></span>
+                  <span>{gettext("Upload & import")}</span>
+                </button>
+                <%= if exports["running"] do %>
+                  <span class="tag is-info is-light">{gettext("import running…")}</span>
+                <% end %>
+              </div>
+            </.form>
+
+            <h4 class="title is-6">{gettext("Imported export files")}</h4>
+            <%= if exports["imports"] == [] do %>
+              <p class="has-text-grey is-size-7">{gettext("None yet.")}</p>
+            <% else %>
+              <table class="table is-narrow is-fullwidth is-size-7">
+                <thead>
+                  <tr>
+                    <th>{gettext("File")}</th>
+                    <th>{gettext("Window")}</th>
+                    <th class="has-text-right">{gettext("Samples")}</th>
+                    <th class="has-text-right">{gettext("Drives")}</th>
+                    <th class="has-text-right">{gettext("Charges")}</th>
+                    <th>{gettext("Imported")}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <%= for item <- exports["imports"] do %>
+                    <tr>
+                      <td><code>{item["filename"]}</code></td>
+                      <td>{epoch_text(item["timer_start"])} → {epoch_text(item["timer_end"])}</td>
+                      <td class="has-text-right">{item["samples"]}</td>
+                      <td class="has-text-right">{item["drives"]}</td>
+                      <td class="has-text-right">{item["charges"]}</td>
+                      <td>{item["imported_at"]}</td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+            <% end %>
+        <% end %>
       </div>
     </div>
   </div>
