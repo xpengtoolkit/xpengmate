@@ -7,4 +7,4 @@
 #   sudo systemctl enable --now xpengmate-history.timer
 #
 # The history service is long-running; this only asks it to start a sync.
-30 3 * * * cd /home/xpengmate/xpengmate && TOKEN=$(grep '^XPENG_PROVIDER_TOKEN=' .env | cut -d= -f2) && curl -fsS -X POST -H "Authorization: Bearer $TOKEN" http://127.0.0.1:8100/sync >> history-sync.log 2>&1
+30 3 * * * cd /opt/xpengmate && TOKEN=$(grep '^XPENG_PROVIDER_TOKEN=' .env | cut -d= -f2) && curl -fsS -X POST -H "Authorization: Bearer $TOKEN" http://127.0.0.1:8100/sync >> history-sync.log 2>&1

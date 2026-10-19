@@ -101,7 +101,7 @@ class AdminApiTest(unittest.IsolatedAsyncioTestCase):
                 headers=self.headers,
                 json={
                     "source": "provider",
-                    "provider_url": "http://homeassistant.local:8200",
+                    "provider_url": "http://ha.local:8200",
                     "provider_token": "upstream-token",
                 },
             ) as response:
@@ -109,7 +109,7 @@ class AdminApiTest(unittest.IsolatedAsyncioTestCase):
                 self.assertTrue((await response.json())["restarting"])
         stored = runtime.read_runtime(self.config.runtime_file)
         self.assertEqual(stored["source"], "provider")
-        self.assertEqual(stored["provider_url"], "http://homeassistant.local:8200")
+        self.assertEqual(stored["provider_url"], "http://ha.local:8200")
         self.assertEqual(
             stat.S_IMODE(os.stat(self.config.runtime_file).st_mode), 0o600
         )

@@ -11,15 +11,15 @@
 #   EVCONDUIT_HOST   ssh target of the EVConduit host        (default 77.42.77.249)
 #   EVCONDUIT_DIR    export root on that host     (default /mnt/volume-ssd/xpeng-exports)
 #   EVCONDUIT_USER   user id directory to read                     (required)
-#   XPENGMATE_HOST   ssh target of the XpengMate host        (default xpengmate-host)
-#   XPENGMATE_DIR    stack directory (default /home/xpengmate/xpengmate)
+#   XPENGMATE_HOST   ssh target of the XpengMate host        (required)
+#   XPENGMATE_DIR    stack directory (default /opt/xpengmate)
 set -euo pipefail
 
 EVCONDUIT_HOST="${EVCONDUIT_HOST:-77.42.77.249}"
 EVCONDUIT_DIR="${EVCONDUIT_DIR:-/mnt/volume-ssd/xpeng-exports}"
 EVCONDUIT_USER="${EVCONDUIT_USER:?set EVCONDUIT_USER to the EVConduit account id}"
-XPENGMATE_HOST="${XPENGMATE_HOST:-xpengmate-host}"
-XPENGMATE_DIR="${XPENGMATE_DIR:-/home/xpengmate/xpengmate}"
+XPENGMATE_HOST="${XPENGMATE_HOST:?set XPENGMATE_HOST to the ssh target}"
+XPENGMATE_DIR="${XPENGMATE_DIR:-/opt/xpengmate}"
 
 echo "== newest export for user $EVCONDUIT_USER"
 LATEST="$(ssh "$EVCONDUIT_HOST" "find '$EVCONDUIT_DIR/$EVCONDUIT_USER' -name 'DA*.zip' -printf '%T@ %p\n' 2>/dev/null | sort -n | tail -1 | cut -d' ' -f2-")"

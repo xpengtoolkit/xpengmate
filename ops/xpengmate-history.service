@@ -9,7 +9,7 @@ Wants=network-online.target
 
 [Service]
 Type=oneshot
-WorkingDirectory=/home/xpengmate/xpengmate
-EnvironmentFile=/home/xpengmate/xpengmate/.env
+WorkingDirectory=/opt/xpengmate
+EnvironmentFile=/opt/xpengmate/.env
 ExecStart=/bin/sh -c 'curl -fsS -X POST -H "Authorization: Bearer $XPENG_PROVIDER_TOKEN" http://127.0.0.1:8100/sync'
 TimeoutStartSec=120

@@ -133,8 +133,6 @@ version changes are recorded once (not as fake updates).
 
 ## Settings in the app
 
-![XpengMate settings](docs/screenshots/xpengmate-settings.png)
-
 `/xpengmate` is the configuration page; changes are applied by restarting the
 engine (a few seconds).
 
@@ -251,12 +249,6 @@ TeslaMate's dashboards, rebranded and extended:
 * The **Firmware** stat reads the latest `updates` version with the `XOS `
   prefix stripped (currently `5.9.5.8909`), so a source change cannot look like
   two updates for one firmware.
-
-![Locations](docs/screenshots/locations.png)
-
-![Drive stats](docs/screenshots/drive-stats.png)
-
-![Battery health](docs/screenshots/battery-health.png)
 
 ## Verification status
 

@@ -9,8 +9,8 @@
 #   xpeng_tokens.json
 #
 # Copy on the machine that runs the stack (or run this there):
-#   scp -r xpengtoolkit/custom_components/xpeng/certs xpengmate-host:/tmp/xpeng-certs
-#   scp /config/xpeng-secrets/xpeng_{tenant,tokens}.json xpengmate-host:/tmp/
+#   scp -r xpengtoolkit/custom_components/xpeng/certs "${XPENGMATE_HOST:?}":/tmp/xpeng-certs
+#   scp /config/xpeng-secrets/xpeng_{tenant,tokens}.json "${XPENGMATE_HOST:?}":/tmp/
 #   ./scripts/install-xpeng-credentials.sh /tmp
 #
 # Files land 0600 in data/engine/{certs,secrets}. The engine must be restarted

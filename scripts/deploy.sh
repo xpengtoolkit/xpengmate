@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
-# Deploy the current working tree to the `xpengmate-host` host and (re)build the stack.
+# Deploy the current working tree to a remote host and (re)build the stack.
 #
-#   ./scripts/deploy-xpengmate-host.sh            # sync + build + up
-#   ./scripts/deploy-xpengmate-host.sh --sync     # sync only
+#   ./scripts/deploy.sh            # sync + build + up
+#   ./scripts/deploy.sh --sync     # sync only
 #
-# The host is expected to have /home/xpengmate/xpengmate with a .env already in
+# The host is expected to have the stack directory with a .env already in
 # place (see .env.example). Nothing here prints or copies secrets.
 set -euo pipefail
 
-HOST="${XPENGMATE_HOST:-xpengmate-host}"
-DIR="${XPENGMATE_DIR:-/home/xpengmate/xpengmate}"
+HOST="${XPENGMATE_HOST:?set XPENGMATE_HOST to the ssh target}"
+DIR="${XPENGMATE_DIR:-/opt/xpengmate}"
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 echo "== syncing $HERE -> $HOST:$DIR"
