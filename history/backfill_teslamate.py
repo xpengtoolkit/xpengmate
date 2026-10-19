@@ -405,6 +405,22 @@ class Backfill:
                 (full_range, full_range, self.car_id),
             )
             self._count("charge_samples_ranges_clamped", cur.rowcount)
+            # The same bound on positions keeps "Max range (now)" and the
+            # capacity-by-mileage chart inside the real pack.
+            cur.execute(
+                """
+                UPDATE positions p SET
+                    rated_battery_range_km = LEAST(
+                        p.rated_battery_range_km,
+                        round((%s * p.usable_battery_level / 100.0)::numeric, 2)),
+                    ideal_battery_range_km = LEAST(
+                        p.ideal_battery_range_km,
+                        round((%s * p.usable_battery_level / 100.0)::numeric, 2))
+                WHERE p.car_id = %s AND p.usable_battery_level > 0
+                """,
+                (full_range, full_range, self.car_id),
+            )
+            self._count("position_ranges_clamped", cur.rowcount)
         self.conn.commit()
 
     # -- charge/position samples -----------------------------
