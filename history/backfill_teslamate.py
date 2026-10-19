@@ -827,6 +827,11 @@ class Backfill:
         self.clamp_charge_ranges()
         self.classify_charge_type(merged)
         self.derive_efficiency(merged)
+        # Two passes: the first geocodes and links, the second catches any drive
+        # whose address was created during that same pass but whose update did
+        # not land (this is what left the Queensland drives unlinked and the
+        # Locations page showing only NSW).
+        self.link_positions_and_locations()
         self.link_positions_and_locations()
         return self.stats
 
