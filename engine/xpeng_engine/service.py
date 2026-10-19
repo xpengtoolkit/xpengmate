@@ -28,6 +28,7 @@ from .config import Config, ConfigError, load_config
 from .proxy import ProviderProxy
 from .runtime import load_runtime_config
 from .mqtt_client import XPengMQTTClient
+from .outside_temp import OutsideTemperature
 from .state import EngineState
 from .teslamate_mapping import is_charging, is_driving
 from .teslamate_provider import ProviderOptions, TeslaMateProvider
@@ -75,6 +76,8 @@ class Engine:
         self._last_poll_at: float | None = None
         self._last_rest_at: float | None = None
         self._last_error: str | None = None
+        self.outside_temp: OutsideTemperature | None = None
+        self._outside_temp_task: asyncio.Task[None] | None = None
 
     # -- lifecycle --------------------------------------------
 
@@ -87,6 +90,22 @@ class Engine:
         )
         await self.admin.async_start()
 
+        self.outside_temp = OutsideTemperature(
+            self.config.ha_url,
+            self.config.ha_token,
+            self.config.outside_temp_entity,
+        )
+        if self.outside_temp.enabled:
+            await self.outside_temp.async_start()
+            self._outside_temp_task = asyncio.create_task(
+                self._outside_temp_loop(), name="outside-temp"
+            )
+            _LOGGER.info(
+                "Outside temperature from Home Assistant %s (%s)",
+                self.config.ha_url,
+                self.config.outside_temp_entity,
+            )
+
         if self.config.source == "provider":
             # Relay mode: the upstream (xpengtoolkit 0.6.16 provider) already
             # speaks Tesla's shapes, so the engine forwards rather than rebuilds.
@@ -96,6 +115,7 @@ class Engine:
                 local_token=self.config.provider_token,
                 port=self.config.provider_port,
                 bind=self.config.provider_bind,
+                outside_temp=self.outside_temp,
             )
             await self.relay.async_start()
             _LOGGER.info(
@@ -107,6 +127,7 @@ class Engine:
             await self._wait_for_stop(tasks)
             if self.relay is not None:
                 await self.relay.async_stop()
+            await self._stop_outside_temp()
             if self.admin is not None:
                 await self.admin.async_stop()
             return
@@ -380,6 +401,27 @@ class Engine:
 
     # -- Home Assistant integration as the live source ----------
 
+    async def _outside_temp_loop(self) -> None:
+        """Keep a fresh sensor reading for the status file and the HA source."""
+        while True:
+            try:
+                assert self.outside_temp is not None
+                await self.outside_temp.async_get()
+            except Exception:  # noqa: BLE001
+                _LOGGER.debug("outside temperature poll failed", exc_info=True)
+            await asyncio.sleep(60)
+
+    async def _stop_outside_temp(self) -> None:
+        if self._outside_temp_task is not None:
+            self._outside_temp_task.cancel()
+            try:
+                await self._outside_temp_task
+            except (asyncio.CancelledError, Exception):  # noqa: BLE001
+                pass
+            self._outside_temp_task = None
+        if self.outside_temp is not None:
+            await self.outside_temp.async_close()
+
     def _on_ha_update(
         self,
         raw: dict,
@@ -389,6 +431,10 @@ class Engine:
     ) -> None:
         if not raw:
             return
+        if self.outside_temp is not None and self.outside_temp.celsius is not None:
+            weather = raw.setdefault("weather", {})
+            if isinstance(weather, dict):
+                weather["realtimeTemperature"] = self.outside_temp.celsius
         self.state.update_poll_status(mqtt_connected=connected)
         if when is not None:
             self.state.set_raw_snapshot(raw, when=when)
@@ -486,6 +532,9 @@ class Engine:
             else None,
             "xos_version": self.state.xos_version,
             "last_error": self._last_error,
+            "outside_temp_entity": getattr(self.outside_temp, "entity_id", None),
+            "outside_temp_c": getattr(self.outside_temp, "celsius", None),
+            "outside_temp_error": getattr(self.outside_temp, "last_error", None),
         }
         if self.relay is not None:
             status.update(
@@ -511,6 +560,8 @@ class Engine:
                     "provider_port": self.config.provider_port,
                     "relay_requests": self.relay.requests if self.relay else 0,
                     "relay_stream_frames": self.relay.frames if self.relay else 0,
+                    "outside_temp_c": getattr(self.outside_temp, "celsius", None),
+                    "outside_temp_entity": getattr(self.outside_temp, "entity_id", None),
                     "last_error": self._last_error,
                 }
                 _write_json_atomic(self.config.status_file, status)

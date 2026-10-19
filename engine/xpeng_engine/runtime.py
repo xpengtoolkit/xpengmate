@@ -33,6 +33,7 @@ EDITABLE = {
     "ha_url": "ha_url",
     "ha_token": "ha_token",
     "ha_entity_prefix": "ha_entity_prefix",
+    "outside_temp_entity": "outside_temp_entity",
 }
 
 SECRET_FIELDS = ("upstream_token", "ha_token")

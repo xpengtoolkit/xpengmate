@@ -169,6 +169,9 @@ needed. It imports into the database:
   of which have GPS) are skipped, and a longer export version replaces a
   previously truncated one;
 * the export's 1 Hz SoC/odometer/range is joined onto existing GPS positions;
+* the rated-range delta of every drive/charge, the AC/DC split, the derived
+  efficiency and the start/end addresses are filled by the backfill below - the
+  energy, battery-health, charges and locations dashboards are built on them;
 * files are remembered by content hash, so re-uploading the same zip is a no-op,
   and the card lists every imported file with its window and row counts.
 
@@ -178,6 +181,33 @@ card says so instead of looking like a failure.
 
 Deliberately not imported: positions. The export has no coordinates, and the
 importer will not invent them.
+
+## Filling TeslaMate's derived columns
+
+`history/backfill_teslamate.py` completes the rows the import could not: drive
+and charge rated ranges (from the exports, the positions table, or the SOC as a
+last resort), `charger_phases` so AC/DC is not "everything DC", the rated range
+on charge samples (battery capacity and cycles), `cars.efficiency` (km -> kWh),
+`positions.drive_id`, and the start/end/charge addresses via Nominatim
+(cached in `addresses`, 1 req/s, skipped with `--no-geocode`).
+
+```bash
+docker exec xpengmate_history_1 python backfill_teslamate.py
+```
+
+It reads every zip in the uploaded export directory and is idempotent, so run
+it again after importing more exports. Import a spread of 30-day exports (they
+overlap by design) so every period is covered by at least one zip.
+
+## Outside temperature
+
+The live source sets `climate_state.outside_temp` from a Home Assistant sensor
+(configurable in `/xpengmate` as *Outside temperature entity*, default
+`XPENG_OUTSIDE_TEMP_ENTITY`, e.g.
+`sensor.xpeng_800783_weather_at_vehicle`). TeslaMate stores that value on each
+position, so the drive/charge temperature averages and the
+*Temperature - Driving Efficiency* panel follow the sensor rather than the
+provider's own weather value.
 
 ## History import
 

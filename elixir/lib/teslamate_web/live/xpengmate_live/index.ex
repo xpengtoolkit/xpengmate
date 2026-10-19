@@ -291,7 +291,8 @@ defmodule TeslaMateWeb.XpengMateLive.Index do
             "provider_token" => "",
             "ha_url" => config["ha_url"] || "",
             "ha_token" => "",
-            "ha_entity_prefix" => config["ha_entity_prefix"] || ""
+            "ha_entity_prefix" => config["ha_entity_prefix"] || "",
+            "outside_temp_entity" => config["outside_temp_entity"] || ""
           }
 
         _ ->

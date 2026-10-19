@@ -147,6 +147,13 @@ fabricating a latitude and longitude. Everything else keeps upstream's shape.
   joins them by exact second and fills `positions.battery_level`, `odometer`,
   `ideal/est_battery_range_km`, then re-derives each drive's start/end range.
   On the reference car that covered 24,150 of 25,249 positions (95.6%).
+* **Derived-column backfill**: `backfill_teslamate.py` fills the TeslaMate
+  columns the historical import leaves empty (rated ranges, charger phases,
+  efficiency, positions.drive_id, geocoded addresses) from the exports,
+  positions and Nominatim, so the energy/capacity/location panels have data.
+* **Outside temperature**: the engine's relay replaces
+  `climate_state.outside_temp` with a configurable Home Assistant sensor, which
+  TeslaMate then stores per position.
 * **XPENG data exports**: `/xpengmate` uploads zips to the history service,
   `export_parser.py` streams the three 1 Hz CSVs into drives/charges/tyres/states
   and `merge_exports/1` reconciles overlapping 30-day windows; `export_import.py`

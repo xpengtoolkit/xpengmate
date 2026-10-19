@@ -85,6 +85,10 @@ class Config:
     ha_url: str = ""
     ha_token: str = ""
     ha_entity_prefix: str = ""
+    #: Optional Home Assistant sensor used for the outside temperature instead
+    #: of the provider's own weather value (e.g.
+    #: sensor.xpeng_800783_weather_at_vehicle).
+    outside_temp_entity: str = ""
 
     # -- settings / administration ---------------------------------
     #: A second HTTP listener, local to the compose network, that the XpengMate
@@ -191,6 +195,7 @@ def load_config() -> Config:
         ha_url=_env("XPENG_HA_URL"),
         ha_token=_env("XPENG_HA_TOKEN"),
         ha_entity_prefix=_env("XPENG_HA_ENTITY_PREFIX"),
+        outside_temp_entity=_env("XPENG_OUTSIDE_TEMP_ENTITY"),
         allow_offline=_env_bool("XPENG_ALLOW_OFFLINE", False),
         simulate=_env_bool("XPENG_SIMULATE", False),
         simulate_file=_env("XPENG_SIMULATE_FILE"),

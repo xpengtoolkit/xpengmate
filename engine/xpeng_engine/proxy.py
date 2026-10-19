@@ -46,6 +46,7 @@ class ProviderProxy:
         bind: str = "0.0.0.0",
         auth_path: str = "/oauth2/v3",
         timeout: float = 15.0,
+        outside_temp: Any = None,
     ) -> None:
         self.upstream_url = upstream_url.rstrip("/")
         self._upstream_token = upstream_token
@@ -54,6 +55,9 @@ class ProviderProxy:
         self._bind = bind
         self._auth_path = auth_path
         self._timeout = timeout
+        #: Optional OutsideTemperature reader: when set, its value replaces the
+        #: upstream provider's climate_state.outside_temp on every read.
+        self._outside_temp = outside_temp
         self._runner: Any = None
         self._site: Any = None
         self._session: "aiohttp.ClientSession | None" = None
@@ -61,6 +65,7 @@ class ProviderProxy:
         self.requests = 0
         self.frames = 0
         self._last_error: str | None = None
+        self._last_outside_temp: float | None = None
 
     # -- lifecycle --------------------------------------------
 
@@ -143,6 +148,11 @@ class ProviderProxy:
                 "provider": "xpengmate-relay",
                 "source": "provider",
                 "upstream": upstream,
+                "outside_temp": {
+                    "entity": getattr(self._outside_temp, "entity_id", None),
+                    "celsius": getattr(self._outside_temp, "celsius", None),
+                    "error": getattr(self._outside_temp, "last_error", None),
+                },
                 "uptime_seconds": round(time.time() - self._started_at, 1),
                 "requests": self.requests,
                 "stream_frames": self.frames,
@@ -203,9 +213,57 @@ class ProviderProxy:
         if not self._authorized(request):
             return self._unauthorized()
         vehicle_id = request.match_info["vehicle_id"]
-        return await self._forward(
-            f"/api/1/vehicles/{vehicle_id}/vehicle_data", request.query_string
-        )
+        path = f"/api/1/vehicles/{vehicle_id}/vehicle_data"
+        self.requests += 1
+        url = f"{self.upstream_url}{path}"
+        if request.query_string:
+            url = f"{url}?{request.query_string}"
+        headers = {"Authorization": f"Bearer {self._upstream_token}"}
+        try:
+            assert self._session is not None
+            async with self._session.get(url, headers=headers) as response:
+                body = await response.read()
+                if response.status != 200:
+                    return web.Response(
+                        status=response.status,
+                        body=body,
+                        content_type=response.content_type,
+                    )
+        except Exception as exc:  # noqa: BLE001
+            self._last_error = str(exc)
+            _LOGGER.warning("upstream %s failed: %s", path, exc)
+            return web.json_response(
+                {"error": "upstream_unavailable", "error_description": str(exc)},
+                status=502,
+            )
+        body = await self._with_outside_temp(body)
+        return web.Response(status=200, body=body, content_type="application/json")
+
+    async def _with_outside_temp(self, body: bytes) -> bytes:
+        """Replace climate_state.outside_temp with the Home Assistant sensor.
+
+        TeslaMate stores this value on every position, so the drive and charge
+        temperature averages follow the sensor the user chose.
+        """
+        if self._outside_temp is None:
+            return body
+        try:
+            value = await self._outside_temp.async_get()
+        except Exception:  # noqa: BLE001
+            return body
+        if value is None:
+            return body
+        try:
+            payload = json.loads(body)
+            vehicle = payload["response"] if isinstance(payload.get("response"), dict) else payload
+            climate = vehicle.get("climate_state")
+            if not isinstance(climate, dict):
+                return body
+            climate["outside_temp"] = value
+            self._last_outside_temp = value
+            return json.dumps(payload).encode()
+        except Exception:  # noqa: BLE001
+            return body
 
     def _unauthorized(self) -> "web.Response":
         return web.json_response(

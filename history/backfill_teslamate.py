@@ -150,13 +150,17 @@ class Backfill:
     def apply_export_ranges(self, merged: MergedExport) -> None:
         with self.conn.cursor() as cur:
             cur.execute(
-                "SELECT id, extract(epoch FROM start_date)::bigint FROM drives WHERE car_id = %s",
+                """
+                SELECT id, extract(epoch FROM start_date)::bigint,
+                       COALESCE(extract(epoch FROM end_date)::bigint, extract(epoch FROM start_date)::bigint)
+                FROM drives WHERE car_id = %s
+                """,
                 (self.car_id,),
             )
-            drive_ids = {int(epoch): int(row_id) for row_id, epoch in cur.fetchall()}
+            drive_windows = [(int(row_id), int(start), int(end)) for row_id, start, end in cur.fetchall()]
 
         for drive in merged.drives:
-            drive_id = self._match(drive_ids, drive.start)
+            drive_id = self._match_window(drive_windows, drive.start, drive.end)
             if drive_id is None:
                 continue
             with self.conn.cursor() as cur:
@@ -186,12 +190,16 @@ class Backfill:
 
         with self.conn.cursor() as cur:
             cur.execute(
-                "SELECT id, extract(epoch FROM start_date)::bigint FROM charging_processes WHERE car_id = %s",
+                """
+                SELECT id, extract(epoch FROM start_date)::bigint,
+                       COALESCE(extract(epoch FROM end_date)::bigint, extract(epoch FROM start_date)::bigint)
+                FROM charging_processes WHERE car_id = %s
+                """,
                 (self.car_id,),
             )
-            charge_ids = {int(epoch): int(row_id) for row_id, epoch in cur.fetchall()}
+            charge_windows = [(int(row_id), int(start), int(end)) for row_id, start, end in cur.fetchall()]
         for charge in merged.charges:
-            charge_id = self._match(charge_ids, charge.start)
+            charge_id = self._match_window(charge_windows, charge.start, charge.end)
             if charge_id is None:
                 continue
             with self.conn.cursor() as cur:
@@ -223,6 +231,22 @@ class Backfill:
                 if cur.rowcount:
                     self._count("charges_ranges")
         self.conn.commit()
+
+    @staticmethod
+    def _match_window(windows: list[tuple[int, int, int]], start: int, end: int) -> int | None:
+        """The row overlapping this record the most, or an exact-second match."""
+        best: tuple[int, float] | None = None
+        for row_id, row_start, row_end in windows:
+            if start == row_start:
+                return row_id
+            overlap = min(end, row_end) - max(start, row_start)
+            if overlap <= 0:
+                continue
+            duration = max(1, end - start)
+            ratio = overlap / duration
+            if ratio >= 0.5 and (best is None or ratio > best[1]):
+                best = (row_id, ratio)
+        return best[0] if best else None
 
     @staticmethod
     def _match(index: dict[int, int], epoch: int) -> int | None:
@@ -317,7 +341,57 @@ class Backfill:
                     self._count("charges_position_fill")
         self.conn.commit()
 
-    # -- charges table ---------------------------------------
+    def fill_charge_ranges_from_soc(self) -> None:
+        """Last resort for a charging session with no position inside it.
+
+        Convert its battery levels with the derived full range; the capacity
+        panel only needs a plausible start/end rated radius, and a session that
+        is otherwise invisible is worse than an estimated one.
+        """
+        with self.conn.cursor() as cur:
+            cur.execute("SELECT efficiency FROM cars WHERE id = %s", (self.car_id,))
+            row = cur.fetchone()
+        if not row or not row[0]:
+            return
+        full_range = self.usable_kwh / float(row[0])
+        with self.conn.cursor() as cur:
+            cur.execute(
+                """
+                UPDATE charging_processes SET
+                    start_rated_range_km = COALESCE(start_rated_range_km, round((%s * start_battery_level / 100.0)::numeric, 2)),
+                    end_rated_range_km   = COALESCE(end_rated_range_km, round((%s * end_battery_level / 100.0)::numeric, 2)),
+                    start_ideal_range_km = COALESCE(start_ideal_range_km, round((%s * start_battery_level / 100.0)::numeric, 2)),
+                    end_ideal_range_km   = COALESCE(end_ideal_range_km, round((%s * end_battery_level / 100.0)::numeric, 2))
+                WHERE car_id = %s
+                  AND start_battery_level IS NOT NULL
+                  AND end_battery_level IS NOT NULL
+                  AND (start_rated_range_km IS NULL OR end_rated_range_km IS NULL)
+                """,
+                (full_range, full_range, full_range, full_range, self.car_id),
+            )
+            self._count("charges_soc_fallback", cur.rowcount)
+        self.conn.commit()
+
+    # -- charge/position samples -----------------------------
+
+    def normalise_positions(self) -> None:
+        """The export has one range figure; give the rated column that value.
+
+        TeslaMate's dashboards read the *rated* range (the preferred range in
+        this install), while the historical import only filled the ideal one.
+        """
+        with self.conn.cursor() as cur:
+            cur.execute(
+                """
+                UPDATE positions SET
+                    rated_battery_range_km = COALESCE(rated_battery_range_km, ideal_battery_range_km),
+                    usable_battery_level = COALESCE(usable_battery_level, battery_level)
+                WHERE car_id = %s
+                """,
+                (self.car_id,),
+            )
+            self._count("positions_range_normalised", cur.rowcount)
+        self.conn.commit()
 
     def normalise_charge_samples(self) -> None:
         with self.conn.cursor() as cur:
@@ -339,12 +413,16 @@ class Backfill:
         if merged is not None:
             with self.conn.cursor() as cur:
                 cur.execute(
-                    "SELECT id, extract(epoch FROM start_date)::bigint FROM charging_processes WHERE car_id = %s",
+                    """
+                    SELECT id, extract(epoch FROM start_date)::bigint,
+                           COALESCE(extract(epoch FROM end_date)::bigint, extract(epoch FROM start_date)::bigint)
+                    FROM charging_processes WHERE car_id = %s
+                    """,
                     (self.car_id,),
                 )
-                charge_ids = {int(epoch): int(row_id) for row_id, epoch in cur.fetchall()}
+                charge_windows = [(int(row_id), int(start), int(end)) for row_id, start, end in cur.fetchall()]
             for charge in merged.charges:
-                charge_id = self._match(charge_ids, charge.start)
+                charge_id = self._match_window(charge_windows, charge.start, charge.end)
                 if charge_id is not None:
                     peaks[charge_id] = max(peaks.get(charge_id, 0.0), charge.peak_power_kw)
 
@@ -673,9 +751,11 @@ class Backfill:
     # -- run -------------------------------------------------
 
     def run(self, merged: MergedExport | None) -> dict[str, int]:
+        self.normalise_positions()
         if merged is not None:
             self.apply_export_ranges(merged)
         self.ranges_from_positions()
+        self.fill_charge_ranges_from_soc()
         self.normalise_charge_samples()
         self.classify_charge_type(merged)
         self.derive_efficiency(merged)
