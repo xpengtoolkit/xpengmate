@@ -372,6 +372,41 @@ class Backfill:
             self._count("charges_soc_fallback", cur.rowcount)
         self.conn.commit()
 
+    def clamp_charge_ranges(self) -> None:
+        """Bound a charge sample's range by the pack's full range at that SOC.
+
+        The export's dynamic range is optimistic at low SOC: without the bound a
+        single sample inflated the battery-capacity panel (123.9 kWh on a
+        87.5 kWh pack). The bound only trims impossible values; degradation
+        still shows because real ranges fall below it.
+        """
+        with self.conn.cursor() as cur:
+            cur.execute("SELECT efficiency FROM cars WHERE id = %s", (self.car_id,))
+            row = cur.fetchone()
+        if not row or not row[0]:
+            full_range = self.usable_kwh / 0.1655
+        else:
+            full_range = self.usable_kwh / float(row[0])
+        with self.conn.cursor() as cur:
+            cur.execute(
+                """
+                UPDATE charges c SET
+                    rated_battery_range_km = LEAST(
+                        c.rated_battery_range_km,
+                        round((%s * c.usable_battery_level / 100.0)::numeric, 2)),
+                    ideal_battery_range_km = LEAST(
+                        c.ideal_battery_range_km,
+                        round((%s * c.usable_battery_level / 100.0)::numeric, 2))
+                FROM charging_processes cp
+                WHERE cp.id = c.charging_process_id
+                  AND cp.car_id = %s
+                  AND c.usable_battery_level > 0
+                """,
+                (full_range, full_range, self.car_id),
+            )
+            self._count("charge_samples_ranges_clamped", cur.rowcount)
+        self.conn.commit()
+
     # -- charge/position samples -----------------------------
 
     def normalise_positions(self) -> None:
@@ -616,6 +651,22 @@ class Backfill:
                     self._count("drive_addresses", cur.rowcount)
             self.conn.commit()
 
+        with self.conn.cursor() as cur:
+            cur.execute(
+                """
+                UPDATE charging_processes cp SET position_id = (
+                    SELECT p.id FROM positions p
+                    WHERE p.car_id = cp.car_id
+                    ORDER BY abs(extract(epoch FROM p.date) - extract(epoch FROM cp.start_date))
+                    LIMIT 1
+                )
+                WHERE cp.car_id = %s AND cp.position_id IS NULL
+                """,
+                (self.car_id,),
+            )
+            self._count("charge_positions_linked", cur.rowcount)
+        self.conn.commit()
+
         for charge_id, start, end in self._charges():
             with self.conn.cursor() as cur:
                 cur.execute(
@@ -757,6 +808,7 @@ class Backfill:
         self.ranges_from_positions()
         self.fill_charge_ranges_from_soc()
         self.normalise_charge_samples()
+        self.clamp_charge_ranges()
         self.classify_charge_type(merged)
         self.derive_efficiency(merged)
         self.link_positions_and_locations()

@@ -1723,8 +1723,8 @@
       },
       {
         "current": {
-          "text": "0",
-          "value": "0"
+          "text": "87.5",
+          "value": "87.5"
         },
         "description": "Set the capacity of your car battery when it was new, in case you started using XpengMate after a while of having it. If not, leave it at 0, it will be calculated with the data that is logged in XpengMate",
         "label": "Custom Battery Capacity (kWh) when new",
@@ -1732,11 +1732,11 @@
         "options": [
           {
             "selected": true,
-            "text": "0",
-            "value": "0"
+            "text": "87.5",
+            "value": "87.5"
           }
         ],
-        "query": "0",
+        "query": "87.5",
         "type": "textbox"
       },
       {

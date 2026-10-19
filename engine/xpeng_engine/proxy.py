@@ -240,28 +240,44 @@ class ProviderProxy:
         return web.Response(status=200, body=body, content_type="application/json")
 
     async def _with_outside_temp(self, body: bytes) -> bytes:
-        """Replace climate_state.outside_temp with the Home Assistant sensor.
+        """Enrich the upstream vehicle_data before TeslaMate sees it.
 
-        TeslaMate stores this value on every position, so the drive and charge
-        temperature averages follow the sensor the user chose.
+        * ``climate_state.outside_temp`` is replaced by the Home Assistant
+          sensor when one is configured, so positions and drive averages use it.
+        * ``vehicle_state.car_version`` loses the provider's ``XOS`` prefix:
+          TeslaMate records a software update whenever the version string
+          changes, and "XOS 5.9.5.8909" vs "5.9.5.8909" produced two fake
+          updates for one firmware.
         """
-        if self._outside_temp is None:
-            return body
-        try:
-            value = await self._outside_temp.async_get()
-        except Exception:  # noqa: BLE001
-            return body
-        if value is None:
+        value = None
+        if self._outside_temp is not None:
+            try:
+                value = await self._outside_temp.async_get()
+            except Exception:  # noqa: BLE001
+                value = None
+        if value is None and "car_version" not in body.decode("utf-8", "replace"):
             return body
         try:
             payload = json.loads(body)
             vehicle = payload["response"] if isinstance(payload.get("response"), dict) else payload
-            climate = vehicle.get("climate_state")
-            if not isinstance(climate, dict):
-                return body
-            climate["outside_temp"] = value
-            self._last_outside_temp = value
-            return json.dumps(payload).encode()
+            changed = False
+            if value is not None:
+                climate = vehicle.get("climate_state")
+                if isinstance(climate, dict):
+                    climate["outside_temp"] = value
+                    self._last_outside_temp = value
+                    changed = True
+            state = vehicle.get("vehicle_state")
+            if isinstance(state, dict):
+                version = state.get("car_version")
+                if isinstance(version, str):
+                    normalised = version.strip()
+                    if normalised.upper().startswith("XOS"):
+                        normalised = normalised[3:].strip()
+                    if normalised != version:
+                        state["car_version"] = normalised
+                        changed = True
+            return json.dumps(payload).encode() if changed else body
         except Exception:  # noqa: BLE001
             return body
 
