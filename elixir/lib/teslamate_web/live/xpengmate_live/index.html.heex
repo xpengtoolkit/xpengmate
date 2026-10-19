@@ -606,8 +606,8 @@
                 <%= if summary != %{} do %>
                   <div class="content is-small">
                     <ul>
-                      <li>{gettext("Files imported: %{n}", n: summary["files_imported"] || 0)}</li>
-                      <li>{gettext("Already imported (duplicate files): %{n}", n: summary["duplicates"] || 0)}</li>
+                      <li>{gettext("New files imported: %{n}", n: summary["files_imported"] || 0)}</li>
+                      <li>{gettext("Duplicate uploads skipped: %{n}", n: summary["duplicates"] || 0)}</li>
                       <li>
                         {gettext("Drives: %{added} added, %{merged} extended, %{skipped} already covered",
                           added: summary["added_drives"] || 0,
@@ -624,6 +624,11 @@
                       <li>{gettext("States added: %{n}", n: summary["added_states"] || 0)}</li>
                       <li>{gettext("Positions enriched: %{n}", n: summary["enriched_positions"] || 0)}</li>
                     </ul>
+                    <%= if (summary["added_drives"] || 0) + (summary["added_charges"] || 0) + (summary["added_states"] || 0) == 0 do %>
+                      <p class="has-text-grey">
+                        {gettext("No new rows were needed: everything in these files is already in the database.")}
+                      </p>
+                    <% end %>
                   </div>
                 <% end %>
                 <%= if run["log_tail"] do %>
@@ -635,18 +640,27 @@
               </div>
             <% end %>
 
-            <.form
-              for={%{}}
+            <%!-- phx-update="ignore" keeps the chosen files when the LiveView
+                 status poll re-renders this card. --%>
+            <form
               id="exports-form"
-              phx-change="validate_uploads"
-              phx-submit="import_exports"
-              multipart
+              phx-update="ignore"
+              action="/xpengmate/exports"
+              method="post"
+              enctype="multipart/form-data"
             >
+              <input type="hidden" name="_csrf_token" value={Plug.CSRFProtection.get_csrf_token()} />
               <div class="field">
                 <div class="control">
                   <div class="file is-boxed is-small">
                     <label class="file-label">
-                      <.live_file_input upload={@uploads.export_zips} class="file-input" />
+                      <input
+                        class="file-input"
+                        type="file"
+                        name="files[]"
+                        multiple
+                        accept=".zip,application/zip"
+                      />
                       <span class="file-cta">
                         <span class="file-icon"><i class="mdi mdi-upload"></i></span>
                         <span class="file-label">{gettext("Choose export zips")}</span>
@@ -659,40 +673,16 @@
                 </p>
               </div>
 
-              <%= if @uploads.export_zips.entries != [] do %>
-                <table class="table is-narrow is-fullwidth is-size-7">
-                  <tbody>
-                    <%= for entry <- @uploads.export_zips.entries do %>
-                      <tr>
-                        <td>{entry.client_name}</td>
-                        <td class="has-text-right">{entry.client_size} bytes</td>
-                        <td>
-                          <button
-                            type="button"
-                            class="button is-small is-light"
-                            phx-click="cancel_upload"
-                            phx-value-key="export_zips"
-                            phx-value-ref={entry.ref}
-                          >
-                            {gettext("remove")}
-                          </button>
-                        </td>
-                      </tr>
-                    <% end %>
-                  </tbody>
-                </table>
-              <% end %>
-
               <div class="buttons">
-                <button class="button is-primary" type="submit" disabled={@uploads.export_zips.entries == []}>
+                <button class="button is-primary" type="submit">
                   <span class="icon"><i class="mdi mdi-database-import"></i></span>
                   <span>{gettext("Upload & import")}</span>
                 </button>
                 <%= if exports["running"] do %>
-                  <span class="tag is-info is-light">{gettext("import running…")}</span>
+                  <span class="has-text-info has-text-weight-semibold">{gettext("import running…")}</span>
                 <% end %>
               </div>
-            </.form>
+            </form>
 
             <h4 class="title is-6">{gettext("Imported export files")}</h4>
             <%= if exports["imports"] == [] do %>

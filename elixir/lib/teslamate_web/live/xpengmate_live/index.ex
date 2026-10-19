@@ -41,14 +41,6 @@ defmodule TeslaMateWeb.XpengMateLive.Index do
       |> allow_upload(:client_key, accept: :any, max_entries: 1, max_file_size: 2_000_000)
       |> allow_upload(:tenant, accept: :any, max_entries: 1, max_file_size: 2_000_000)
       |> allow_upload(:tokens, accept: :any, max_entries: 1, max_file_size: 2_000_000)
-      # XPENG data exports: a 30-day zip is ~5-25 MB, and several are imported
-      # together because their windows overlap.
-      |> allow_upload(:export_zips,
-        accept: :any,
-        max_entries: 12,
-        max_file_size: 300_000_000,
-        auto_upload: false
-      )
 
     # Fetched for the static render too: both services are on the compose
     # network, and a settings page that paints its status in the first frame is
@@ -251,35 +243,6 @@ defmodule TeslaMateWeb.XpengMateLive.Index do
     end
   end
 
-  def handle_event("import_exports", _params, socket) do
-    files =
-      consume_uploaded_entries(socket, :export_zips, fn %{path: path}, entry ->
-        {:ok, {entry.client_name, File.read!(path)}}
-      end)
-
-    if files == [] do
-      {:noreply, put_flash(socket, :error, gettext("Choose at least one export zip first."))}
-    else
-      case Client.upload_exports(files) do
-        {:ok, _} ->
-          Process.send_after(self(), :reload, 4_000)
-          Process.send_after(self(), :reload, 20_000)
-
-          {:noreply,
-           put_flash(
-             socket,
-             :info,
-             gettext("Uploaded %{count} file(s). Importing in the background; this page refreshes itself.",
-               count: length(files)
-             )
-           )}
-
-        {:error, reason} ->
-          {:noreply, put_flash(socket, :error, reason)}
-      end
-    end
-  end
-
   def handle_event("sync_history", _params, socket) do
     case Client.sync_history() do
       {:ok, _} ->
@@ -407,9 +370,7 @@ defmodule TeslaMateWeb.XpengMateLive.Index do
   end
 
   defp safe_upload_key(key) do
-    @upload_keys
-    |> Enum.concat([:export_zips])
-    |> Enum.find(:ca_chain, &(Atom.to_string(&1) == key))
+    Enum.find(@upload_keys, :ca_chain, &(Atom.to_string(&1) == key))
   end
 
   defp epoch_text(nil), do: "—"

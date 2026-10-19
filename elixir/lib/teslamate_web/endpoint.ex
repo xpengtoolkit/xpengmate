@@ -34,6 +34,8 @@ defmodule TeslaMateWeb.Endpoint do
   plug Plug.Parsers,
     parsers: [:urlencoded, :multipart, :json],
     pass: ["*/*"],
+    # XPENG data exports are tens of MB each and several are uploaded at once.
+    length: 512_000_000,
     json_decoder: Phoenix.json_library()
 
   plug Plug.MethodOverride

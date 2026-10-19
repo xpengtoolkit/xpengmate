@@ -153,7 +153,11 @@ never regenerated: the token pair is sealed against it.
 
 XPENG's GDPR data exports are rolling 30-day windows, so the useful workflow is
 "upload a handful of them". The **XPENG data export files** card on
-`/xpengmate` accepts up to 12 zips at once and imports them into the database:
+`/xpengmate` accepts up to 12 zips at once, posts them as a normal multipart
+form (reliable for large selections), and redirects back with an explicit
+confirmation: the card then reports "new files imported", "duplicate uploads
+skipped", added/extended/covered rows, and says outright when nothing new was
+needed. It imports into the database:
 
 * each zip is parsed for drives (speed-integrated distance, odometer, SoC
   bounds, peak power), charging sessions (energy drawn at the wall and into the
@@ -166,6 +170,10 @@ XPENG's GDPR data exports are rolling 30-day windows, so the useful workflow is
 * the export's 1 Hz SoC/odometer/range is joined onto existing GPS positions;
 * files are remembered by content hash, so re-uploading the same zip is a no-op,
   and the card lists every imported file with its window and row counts.
+
+Because the export has no GPS, an import can legitimately add **zero** rows when
+the uploaded windows are already covered by the live logger or EVConduit - the
+card says so instead of looking like a failure.
 
 Deliberately not imported: positions. The export has no coordinates, and the
 importer will not invent them.
