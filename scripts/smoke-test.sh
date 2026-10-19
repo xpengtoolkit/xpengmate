@@ -47,7 +47,8 @@ ok "settings page (200)"
 say "history service"
 if [[ -n "$TOKEN" ]]; then
   h="$(curl -fsS -H "Authorization: Bearer $TOKEN" "http://127.0.0.1:8100/status")" || fail "history /status"
-  echo "$h" | grep -q '"ok":true' || fail "history /status not ok"
+  python3 -c 'import json,sys; sys.exit(0 if json.load(sys.stdin).get("ok") else 1)' <<< "$h" \
+    || fail "history /status not ok"
   ok "history status"
 fi
 
