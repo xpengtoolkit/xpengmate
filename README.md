@@ -253,8 +253,10 @@ TeslaMate's dashboards, rebranded and extended:
   "Usable (new)" is pinned to 87.5; "Usable (now)" is
   `Σ charge energy into pack ÷ Σ SOC increase` over recent sessions with a ≥5%
   rise — independent of the car's optimistic range estimate.
-* **Charges** shows the AC/DC split from `charger_phases` (85 AC / 19 DC on the
-  reference car) and the **Locations** page groups drives by geocoded address
+* **Charges** shows the AC/DC split from `charger_phases` (86 AC / 19 DC on the
+  reference car). The EVConduit import writes the phase itself (AC = 1, DC =
+  NULL) and every sync runs the derived-column backfill afterwards, so the split
+  survives re-imports instead of degrading to "everything DC" and the **Locations** page groups drives by geocoded address
   (2 states, 12 cities, Sydney/Taree/Forster/Gold Coast…).
 * The **Firmware** stat reads the latest `updates` version with the `XOS `
   prefix stripped (currently `5.9.5.8909`), so a source change cannot look like

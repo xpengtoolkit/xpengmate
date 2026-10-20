@@ -470,6 +470,24 @@ class HistoryService:
             )
             code = await process.wait()
             ok = code == 0
+            if ok:
+                # Re-imported rows start without TeslaMate's derived columns
+                # (charger phases, rated ranges, clamps), so the sync is only
+                # complete once the backfill has run over the fresh data.
+                log.write("=== backfill after sync ===\n")
+                backfill = await asyncio.create_subprocess_exec(
+                    sys.executable,
+                    "backfill_teslamate.py",
+                    "--no-geocode",
+                    cwd=os.path.dirname(os.path.abspath(__file__)),
+                    env=environment,
+                    stdout=log,
+                    stderr=subprocess.STDOUT,
+                )
+                backfill_code = await backfill.wait()
+                log.write(f"=== backfill finished ({backfill_code}) ===\n")
+                if backfill_code != 0:
+                    _LOGGER.warning("backfill after sync failed with %s", backfill_code)
         except Exception as exc:  # noqa: BLE001
             log.write(f"sync failed to start: {exc}\n")
             ok = False

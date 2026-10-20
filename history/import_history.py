@@ -479,6 +479,11 @@ class Store:
                 soc_end = as_float(session.get("soc_end"))
                 peak = max((as_float(v) or 0.0) for v in power)
                 fast = bool(session.get("is_dc_fast")) or peak >= 20
+                # TeslaMate classifies a session AC/DC from the mode of
+                # charger_phases across its samples; a fast charger has no
+                # phases (NULL), an AC session reports at least one phase.
+                # Without this every re-sync marked all sessions as DC again.
+                phases = None if fast else 1
                 cumulative = 0.0
                 previous_t: float | None = None
                 for index, t_value in enumerate(seconds):
@@ -514,14 +519,14 @@ class Store:
                         (
                             when,
                             level,
-                            None,
+                            level,
                             round(cumulative, 2),
                             max(0, as_int(kw) or 0),
                             abs(as_int(amp[index])) if index < len(amp) else None,
                             as_int(volt[index]) if index < len(volt) else None,
-                            None,
+                            phases,
                             ideal_range,
-                            None,
+                            ideal_range,
                             None,
                             fast,
                             None,
