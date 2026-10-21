@@ -108,12 +108,13 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT convert_celsius(inside_temp, '$temp_unit') AS \"Inside [°$temp_unit]\"\nFROM positions\nWHERE car_id = $car_id AND inside_temp IS NOT NULL AND ideal_battery_range_km IS NOT NULL AND date >= (TIMEZONE('UTC', NOW()) - INTERVAL '60m')\nORDER BY date DESC\nLIMIT 1",
+          "rawSql": "SELECT convert_celsius(inside_temp, '$temp_unit') AS \"Inside [°$temp_unit]\"\nFROM positions\nWHERE car_id = $car_id AND inside_temp IS NOT NULL AND ideal_battery_range_km IS NOT NULL\nORDER BY date DESC\nLIMIT 1",
           "refId": "A"
         }
       ],
       "title": "Inside (last value)",
-      "type": "stat"
+      "type": "stat",
+      "description": "Latest logged position with this reading. While the car sleeps no new positions are written, so the value is the last one measured — the timestamp is visible in the Temperature History chart."
     },
     {
       "datasource": {
@@ -171,12 +172,13 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT convert_celsius(outside_temp, '$temp_unit') AS \"Outside [°$temp_unit]\"\nFROM positions\nWHERE car_id = $car_id AND outside_temp IS NOT NULL AND ideal_battery_range_km IS NOT NULL AND date >= (TIMEZONE('UTC', NOW()) - INTERVAL '60m')\nORDER BY date DESC\nLIMIT 1",
+          "rawSql": "SELECT convert_celsius(outside_temp, '$temp_unit') AS \"Outside [°$temp_unit]\"\nFROM positions\nWHERE car_id = $car_id AND outside_temp IS NOT NULL AND ideal_battery_range_km IS NOT NULL\nORDER BY date DESC\nLIMIT 1",
           "refId": "A"
         }
       ],
       "title": "Outside (last value)",
-      "type": "stat"
+      "type": "stat",
+      "description": "Latest logged position with this reading. While the car sleeps no new positions are written, so the value is the last one measured — the timestamp is visible in the Temperature History chart."
     },
     {
       "datasource": {

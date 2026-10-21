@@ -142,6 +142,10 @@ services:
       - HISTORY_EXPORT_LOG=/data/exports.log
       - HISTORY_EXPORT_LAST_RUN=/data/export_last_run.json
       - HISTORY_EXPORT_DIR=/data/exports/uploaded
+      # Home Assistant long-term statistics: historical outside temperature.
+      - XPENG_HA_URL=${XPENG_HA_URL:-}
+      - XPENG_HA_TOKEN=${XPENG_HA_TOKEN:-}
+      - XPENG_OUTSIDE_TEMP_ENTITY=${XPENG_OUTSIDE_TEMP_ENTITY:-sensor.xpeng_800783_weather_at_vehicle}
       - TZ=${TZ:-Australia/Sydney}
     volumes:
       - ./data/history:/data

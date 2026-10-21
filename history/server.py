@@ -455,6 +455,32 @@ class HistoryService:
             pending.append(os.path.join(EXPORT_UPLOAD_DIR, name))
         return pending
 
+    async def _run_temperature_backfill(
+        self, environment: dict[str, str], log: Any
+    ) -> None:
+        """Give historical positions/averages the outside temperature.
+
+        Only possible when a Home Assistant URL/token is configured: the values
+        come from HA's long-term statistics for the outside-temperature sensor.
+        """
+        if not environment.get("XPENG_HA_URL") or not environment.get("XPENG_HA_TOKEN"):
+            return
+        try:
+            process = await asyncio.create_subprocess_exec(
+                sys.executable,
+                "backfill_temperatures.py",
+                cwd=os.path.dirname(os.path.abspath(__file__)),
+                env=environment,
+                stdout=log,
+                stderr=subprocess.STDOUT,
+            )
+            code = await process.wait()
+            log.write(f"=== temperature backfill finished ({code}) ===\n")
+            if code != 0:
+                _LOGGER.warning("temperature backfill failed with %s", code)
+        except Exception as exc:  # noqa: BLE001
+            log.write(f"temperature backfill failed to start: {exc}\n")
+
     async def _run_export_import(
         self, paths: list[str], environment: dict[str, str], log: Any
     ) -> None:
@@ -546,6 +572,7 @@ class HistoryService:
                 log.write(f"=== backfill finished ({backfill_code}) ===\n")
                 if backfill_code != 0:
                     _LOGGER.warning("backfill after sync failed with %s", backfill_code)
+                await self._run_temperature_backfill(environment, log)
         except Exception as exc:  # noqa: BLE001
             log.write(f"sync failed to start: {exc}\n")
             ok = False
