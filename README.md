@@ -195,6 +195,10 @@ pressures and states, and reports how stale the source is. Two credential sets:
   available from XPENG and stays `NULL`.
 * Daily sync: `ops/xpengmate-history.cron` (a systemd timer sits beside it) POSTs
   to the history service; `scripts/sync-history.sh` does the same from a shell.
+  Any export zip in the upload directory that has not been imported yet is
+  imported during that sync too, so its online/asleep spans, tyre pressures and
+  SoC/odometer/range enrichment are applied even when EVConduit already covers
+  the drives and charges.
 * `docker-compose run --rm history` still works as a one-shot run.
 
 ## Importing XPENG data exports

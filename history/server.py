@@ -425,6 +425,45 @@ class HistoryService:
 
     # -- the importer -----------------------------------------
 
+    def _pending_export_zips(self) -> list[str]:
+        """Export zips in the upload directory that were never imported."""
+        if not DATABASE_URL or not os.path.isdir(EXPORT_UPLOAD_DIR):
+            return []
+        try:
+            with psycopg.connect(DATABASE_URL, autocommit=True) as connection:
+                with connection.cursor() as cursor:
+                    cursor.execute("SELECT filename FROM xpengmate_export_imports")
+                    known = {row[0] for row in cursor.fetchall()}
+        except Exception:  # noqa: BLE001 - missing table means nothing imported yet
+            known = set()
+        pending = []
+        for name in sorted(os.listdir(EXPORT_UPLOAD_DIR)):
+            if not name.lower().endswith(".zip") or name in known:
+                continue
+            pending.append(os.path.join(EXPORT_UPLOAD_DIR, name))
+        return pending
+
+    async def _run_export_import(
+        self, paths: list[str], environment: dict[str, str], log: Any
+    ) -> None:
+        log.write(f"=== export import: {len(paths)} pending zip(s) ===\n")
+        try:
+            process = await asyncio.create_subprocess_exec(
+                sys.executable,
+                "export_import.py",
+                *paths,
+                cwd=os.path.dirname(os.path.abspath(__file__)),
+                env=environment,
+                stdout=log,
+                stderr=subprocess.STDOUT,
+            )
+            code = await process.wait()
+            log.write(f"=== export import finished ({code}) ===\n")
+            if code != 0:
+                _LOGGER.warning("export import after sync failed with %s", code)
+        except Exception as exc:  # noqa: BLE001
+            log.write(f"export import failed to start: {exc}\n")
+
     async def _run_import(self) -> None:
         mode = self._config.get("mode") or "supabase"
         environment = dict(os.environ)
@@ -471,6 +510,13 @@ class HistoryService:
             code = await process.wait()
             ok = code == 0
             if ok:
+                # Any export zip dropped in the upload directory (including a
+                # manual download) is imported here, so its state spans, tyres
+                # and SoC/range enrichment are applied even when EVConduit
+                # already covers the drives and charges.
+                pending = await asyncio.to_thread(self._pending_export_zips)
+                if pending:
+                    await self._run_export_import(pending, environment, log)
                 # Re-imported rows start without TeslaMate's derived columns
                 # (charger phases, rated ranges, clamps), so the sync is only
                 # complete once the backfill has run over the fresh data.
