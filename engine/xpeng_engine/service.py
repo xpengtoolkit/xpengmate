@@ -104,6 +104,18 @@ class Engine:
                 self.config.sleep_status_url,
                 self.config.sleep_status_entity,
             )
+            # The polling status must describe the same integration as the live
+            # provider; if it comes from another host its "Silent" can put this
+            # logger to sleep while the real provider has fresh data.
+            provider_host = self.config.upstream_url.split("//")[-1].split(":")[0]
+            status_host = self.config.sleep_status_url.split("//")[-1].split(":")[0]
+            if self.config.source == "provider" and provider_host != status_host:
+                _LOGGER.warning(
+                    "Sleep status host %s differs from the provider host %s; "
+                    "point XPENG_SLEEP_STATUS_URL at the provider's Home Assistant",
+                    status_host,
+                    provider_host,
+                )
 
         self.outside_temp = OutsideTemperature(
             self.config.ha_url,

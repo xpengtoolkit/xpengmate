@@ -139,7 +139,11 @@ pieces of XPENG-specific enrichment:
   which is what makes TeslaMate enter its normal sleep/suspend behaviour.
   Configure with `XPENG_SLEEP_STATUS_URL`, `XPENG_SLEEP_STATUS_TOKEN` and
   `XPENG_SLEEP_STATUS_ENTITY`; without it the fallback is
-  `XPENG_ASLEEP_AFTER` seconds of telemetry silence (default 900).
+  `XPENG_ASLEEP_AFTER` seconds of telemetry silence (default 900). The status
+  URL/token must point at the **same Home Assistant as the provider** — if it
+  points at another host, that host's "Silent" can put the logger to sleep while
+  the real provider still has fresh data (the engine logs a warning when the
+  hosts differ).
 
 ## Settings in the app
 
