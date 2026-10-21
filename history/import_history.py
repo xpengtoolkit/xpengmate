@@ -621,7 +621,9 @@ class Store:
             for start, end, state in intervals:
                 if end <= start:
                     continue
-                if any(start <= other_end and end >= other_start for other_start, other_end in existing):
+                # Spans share their boundary (online ends exactly where asleep
+                # starts), so only a strict overlap is an overlap.
+                if any(start < other_end and end > other_start for other_start, other_end in existing):
                     continue
                 key = f"{self.vin}:{start.isoformat()}"
                 cur.execute(

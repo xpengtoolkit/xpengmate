@@ -477,7 +477,7 @@
                   <div class="select is-fullwidth">
                     <select name="history[mode]">
                       <option value="api" selected={@history_form.params["mode"] == "api"}>
-                        {gettext("EVConduit API key (normal account — recent window + trip GPS)")}
+                        {gettext("EVConduit API key (normal account — full history)")}
                       </option>
                       <option value="supabase" selected={@history_form.params["mode"] == "supabase"}>
                         {gettext("EVConduit database (self-hosted operator only — full history)")}
@@ -507,7 +507,7 @@
                     <input class="input" type="password" name="history[api_key]" value="" placeholder={gettext("leave empty to keep the saved key")} autocomplete="off" />
                   </div>
                   <p class="help">
-                    {gettext("Your EVConduit API key. The generated API is capped at the newest 200 trips and charges, so this imports a recent window plus each trip's GPS track — not a full backfill.")}
+                    {gettext("Your EVConduit API key. The versioned data API (/api/v1/xpeng) is cursor-paged, so this imports the account's full history: trips, charging sessions, GPS positions, tyre pressures, charge curves and online/asleep spans.")}
                   </p>
                 </div>
                 <div class="field">

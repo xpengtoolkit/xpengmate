@@ -391,7 +391,8 @@ class Importer:
                 if next_start - end >= sleeping_gap:
                     proposed.append(("asleep", end, next_start))
         for state, start, end in proposed:
-            if any(start <= existing_end and end >= existing_start for _id, existing_start, existing_end in existing):
+            # Export spans abut each other; a shared boundary is not overlap.
+            if any(start < existing_end and end > existing_start for _id, existing_start, existing_end in existing):
                 self.skipped_states += 1
                 continue
             with self.conn.cursor() as cur:

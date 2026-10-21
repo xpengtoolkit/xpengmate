@@ -152,12 +152,24 @@ async def source_freshness(session: "aiohttp.ClientSession", config: dict[str, A
             newest = rows[0].get("started_at") if rows else None
             return {"mode": "supabase", "newest_event": newest}
         if config.get("mode") == "api" and config.get("api_url"):
-            url = config["api_url"].rstrip("/") + "/api/user/xpeng/trips"
-            headers = {"Authorization": f"Bearer {config.get('api_key', '')}"}
-            async with session.get(url, headers=headers, timeout=15) as response:
+            # The data API pages oldest-first; one 1000-row page covers this
+            # account (354 trips), so the last row is the newest event.
+            base = config["api_url"].rstrip("/")
+            if not base.endswith("/api/v1/xpeng"):
+                base = base + "/api/v1/xpeng"
+            url = base + "/trips"
+            headers = {
+                "Authorization": f"Bearer {config.get('api_key', '')}",
+                "Accept": "application/json",
+                "User-Agent": "XpengMate/4.4 (+https://github.com/xpengtoolkit/xpengmate)",
+            }
+            params = {"limit": "1000", "vin": vin}
+            async with session.get(
+                url, headers=headers, params=params, timeout=20
+            ) as response:
                 payload = await response.json() if response.status == 200 else {}
-            trips = payload.get("trips") or []
-            newest = trips[0].get("started_at") if trips else None
+            trips = payload.get("data") or []
+            newest = trips[-1].get("started_at") if trips else None
             return {"mode": "api", "newest_event": newest, "visible_trips": len(trips)}
         return {"mode": config.get("mode") or "unconfigured"}
     except Exception as exc:  # noqa: BLE001

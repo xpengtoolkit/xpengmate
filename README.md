@@ -185,7 +185,7 @@ pressures and states, and reports how stale the source is. Two credential sets:
 
 | Who you are | What to enter | What you get |
 |---|---|---|
-| **Normal EVConduit account** | API base URL + your **xpengcardata API key** (EVConduit → History → API) | newest 200 trips/charging sessions with each trip's GPS track — a rolling recent window, not a full backfill |
+| **Normal EVConduit account** | API base URL + your **EVConduit API key** (profile page) | the full history through the versioned, cursor-paged `/api/v1/xpeng` API: trips, charging sessions, GPS positions, tyre pressures, charge curves and online/asleep spans. This is the recommended mode. |
 | **Self-hosting EVConduit** | the EVConduit **Supabase URL + service-role key** | the complete history; operator credential that bypasses RLS — treat as a password, rotate/scope it |
 | **No EVConduit** | leave unconfigured | live logging plus XPENG export-file imports; no historical GPS before live logging began |
 

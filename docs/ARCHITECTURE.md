@@ -147,6 +147,11 @@ fabricating a latitude and longitude. Everything else keeps upstream's shape.
   joins them by exact second and fills `positions.battery_level`, `odometer`,
   `ideal/est_battery_range_km`, then re-derives each drive's start/end range.
   On the reference car that covered 24,150 of 25,249 positions (95.6%).
+* **EVConduit data API (`mode=api`)**: `history/xpeng_api.py` consumes the
+  versioned, cursor-paged `/api/v1/xpeng` surface (trips, charges, positions,
+  tyre pressures, charge curves, state spans) with a per-key rate limit; the
+  importer pages every collection to the end, so an API key now gets the full
+  history without database access or manual export downloads.
 * **Derived-column backfill**: `backfill_teslamate.py` fills the TeslaMate
   columns the historical import leaves empty (rated ranges, charger phases,
   efficiency, positions.drive_id, geocoded addresses) from the exports,
