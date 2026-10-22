@@ -118,44 +118,6 @@
               </div>
             </div>
 
-            <h4 class="title is-6">{gettext("Installed XPENG credentials")}</h4>
-            <div class="content is-small">
-              <ul>
-                <%= for {name, info} <- engine["credentials"]["certs"] do %>
-                  <li>
-                    <%= if info["present"] do %>
-                      <span class="has-text-success has-text-weight-semibold">{gettext("present")}</span>
-                    <% else %>
-                      <span class="has-text-grey">{gettext("missing")}</span>
-                    <% end %>
-                    <code>{name}</code>
-                    <%= if info["bytes"], do: "· #{info["bytes"]} bytes" %>
-                  </li>
-                <% end %>
-                <li>
-                  <code>tenant</code> ·
-                  <%= if engine["credentials"]["tenant"]["present"] do %>
-                    <span class="has-text-success has-text-weight-semibold">{gettext("present")}</span>
-                    {gettext("keys: %{count}, device …%{tail}",
-                      count: engine["credentials"]["tenant"]["key_count"],
-                      tail: engine["credentials"]["tenant"]["device_id_tail"]
-                    )}
-                  <% else %>
-                    <span class="has-text-grey">{gettext("missing")}</span>
-                  <% end %>
-                </li>
-                <li>
-                  <code>tokens</code> ·
-                  <%= if engine["credentials"]["tokens"]["present"] do %>
-                    <span class="has-text-success has-text-weight-semibold">{gettext("present")}</span>
-                    {fmt(engine["credentials"]["tokens"]["account"])}
-                    <%= if engine["credentials"]["tokens"]["vin"], do: "· #{engine["credentials"]["tokens"]["vin"]}" %>
-                  <% else %>
-                    <span class="has-text-grey">{gettext("missing")}</span>
-                  <% end %>
-                </li>
-              </ul>
-            </div>
         <% end %>
 
         <hr />
@@ -173,9 +135,6 @@
                       </option>
                       <option value="ha" selected={@source_form.params["source"] == "ha"}>
                         {gettext("Home Assistant entities (fallback, no provider option needed)")}
-                      </option>
-                      <option value="xpeng" selected={@source_form.params["source"] == "xpeng"}>
-                        {gettext("XPENG cloud (native engine — needs the credentials below)")}
                       </option>
                     </select>
                   </div>
@@ -272,78 +231,6 @@
             <pre class="is-size-7">{Jason.encode!(@test_result, pretty: true)}</pre>
           </div>
         <% end %>
-      </div>
-    </div>
-
-    <%!-- ===================== CREDENTIALS ===================== --%>
-    <div class="card mb-5">
-      <header class="card-header">
-        <p class="card-header-title">
-          <span class="icon mr-2"><i class="mdi mdi-certificate"></i></span>
-          {gettext("XPENG credentials (native engine)")}
-        </p>
-      </header>
-      <div class="card-content">
-        <p class="content is-small">
-          {gettext(
-            "The three app-tier PEM files, the tenant key pool, and the account token pair. They are written mode 0600 on the engine's volume and never shown again. The integration's own auth and renewal keep the token alive; this path is only used when the source is set to XPENG cloud."
-          )}
-        </p>
-        <.form
-          for={@credentials_form}
-          id="credentials-form"
-          phx-change="validate_uploads"
-          phx-submit="save_credentials"
-          multipart
-        >
-          <div class="columns is-multiline">
-            <%= for {key, label, upload} <- [
-              {"ca_chain", gettext("CA chain (ca-chain.crt)"), @uploads.ca_chain},
-              {"client_cert", gettext("Client certificate (client-cert-0.pem)"), @uploads.client_cert},
-              {"client_key", gettext("Client private key (client-key.pem)"), @uploads.client_key},
-              {"tenant", gettext("Tenant (xpeng_tenant.json)"), @uploads.tenant},
-              {"tokens", gettext("Tokens (xpeng_tokens.json)"), @uploads.tokens}
-            ] do %>
-              <div class="column is-6">
-                <div class="field">
-                  <label class="label is-small">{label}</label>
-                  <div class="control">
-                    <div class="file is-small has-name">
-                      <label class="file-label">
-                        <.live_file_input upload={upload} class="file-input" />
-                        <span class="file-cta">
-                          <span class="file-icon"><i class="mdi mdi-upload"></i></span>
-                          <span class="file-label">{gettext("Choose file")}</span>
-                        </span>
-                        <span class="file-name">
-                          {Enum.map_join(upload.entries, ", ", & &1.client_name)}
-                        </span>
-                      </label>
-                    </div>
-                  </div>
-                  <%= for error <- upload_errors(upload) do %>
-                    <p class="help is-danger">{Phoenix.Naming.humanize(error)}</p>
-                  <% end %>
-                </div>
-              </div>
-            <% end %>
-            <div class="column is-6">
-              <div class="field">
-                <label class="label is-small">{gettext("VIN (optional; read from tokens when empty)")}</label>
-                <div class="control">
-                  <input class="input is-small" type="text" name="credentials[vin]" value={@credentials_form.params["vin"]} />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="buttons">
-            <button class="button is-primary" type="submit">
-              <span class="icon"><i class="mdi mdi-lock-reset"></i></span>
-              <span>{gettext("Install credentials")}</span>
-            </button>
-          </div>
-        </.form>
       </div>
     </div>
 

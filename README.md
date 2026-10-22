@@ -106,7 +106,7 @@ layers. Use a dedicated account (share the car to it) for XpengMate.
 | Source | How | When to use |
 |---|---|---|
 | `provider` *(recommended)* | The xpengtoolkit 0.6.16+ integration's own Tesla-compatible provider is enabled in Home Assistant (port 8200); XpengMate relays it, swapping in the provider token. | You already run the xpengtoolkit integration and want one owner of the XPENG session. |
-| `xpeng` | The engine authenticates to XPENG's cloud itself with the app-tier mTLS certificates, tenant key pool and account tokens. | You want XpengMate to own the session with no Home Assistant in the path. |
+| `xpeng` *(unsupported, development only)* | The engine authenticates to XPENG's cloud itself with the app-tier mTLS certificates, tenant key pool and account tokens. Not exposed in the settings UI: the credentials break whenever the XPENG app changes and the provider relay is the maintained path. | Only for engine development, configured by environment variables; do not deploy it for a normal installation. |
 | `ha` | The engine subscribes to `state_changed` over Home Assistant's websocket and reconstructs the telemetry tree from the integration's entities. | Fallback when the provider option is not enabled. |
 
 ```yaml
@@ -164,7 +164,14 @@ engine (a few seconds).
   files, duplicates, added/extended/covered drives and charges, and explains
   when nothing new was needed.
 
-## XPENG credentials (native engine)
+## Native engine (unsupported / development only)
+
+The native XPENG-cloud path is **not supported and its configuration is hidden
+from the settings page**. It needs app-tier credentials that have to be
+re-extracted from a specific XPENG app release, and it stops working when that
+app changes; the Home Assistant provider relay is the maintained path. The files
+below are only relevant to engine development (`XPENG_SOURCE=xpeng`, installed by
+`scripts/install-xpeng-credentials.sh` or by hand).
 
 | Path | What it is |
 |---|---|
