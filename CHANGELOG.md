@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### MQTT topics of values the car does not report
+
+A value the car reports as missing is now published as an empty [MQTT topic](https://docs.teslamate.org/docs/integrations/mqtt#mqtt-topics), e.g. `speed` and `shift_state` once the car is switched off; before, the last value stayed. A topic the car has not reported since TeslaMate started is no longer cleared, so its retained value stays. While TeslaMate runs, the `odometer` never decreases and is never published empty.
+
 ### New features
 
 ### Improvements and bug fixes
@@ -13,6 +17,7 @@
 - perf(web): connect to the map tile server early, so maps appear sooner (#5826 - @JakobLichterfeld)
 - fix(web): label cars without a name by their VIN in the settings, like the car summary (#5821 - @TUNER88)
 - fix(web): label cars without a name by their VIN on the charge cost page and in the vehicle reload hint, like the car summary (#5827 - @JakobLichterfeld)
+- fix(vehicle): show the newest value of stream and poll in the car summary and on MQTT, so values such as the odometer no longer step back while driving (#5864 - @JakobLichterfeld)
 
 #### Build, CI, internal
 
@@ -41,15 +46,35 @@
 - refactor(rust): configure the OTLP export only through the standard OpenTelemetry environment variables, export each signal only when its endpoint is set, and drop the unused dependencies (#5835 - @JakobLichterfeld)
 - fix(db): align import_runs.car_id type with cars.id (smallint) (#5847 - @JakobLichterfeld)
 - refactor(db): rename the range enum to preferred_range (#5860 - @JakobLichterfeld)
+- build(deps): bump finch from 0.23.0 to 0.24.0 in /elixir (#5832)
+- build(deps): bump anchore/sbom-action from 0.24.2 to 0.24.3 in /.github/actions/build in the actions-deps group across 1 directory (#5834)
+- build(deps): bump tokio from 1.53.1 to 1.53.3 in /rust (#5836)
+- build(deps-dev): bump sass from 1.105.0 to 1.105.1 in /elixir/assets (#5837)
+- build(deps): bump source-map-js from 1.2.1 to 1.2.2 in /elixir/assets (#5838)
+- build(deps): bump proxy-addr from 2.0.7 to 2.0.8 in /website (#5839)
+- build(deps): bump source-map-js from 1.2.1 to 1.2.2 in /website (#5840)
+- build(deps): bump compression from 1.8.1 to 1.8.2 in /website (#5841)
+- build(deps): bump shell-quote from 1.10.0 to 1.12.0 in /website (#5842)
+- build(deps): bump joi from 17.13.7 to 17.13.8 in /website (#5843)
+- build(nix): drop x86_64-darwin, which devenv's nixpkgs no longer supports (#5879 - @JakobLichterfeld)
+- build(deps): update flake.lock (#5850)
+- build(nix): regenerate treefmt.toml for the updated treefmt-nix (#5850 - @JakobLichterfeld)
+- build(deps): bump follow-redirects from 1.16.0 to 1.16.1 in /website (#5876)
+- build(deps): bump launch-editor from 2.14.1 to 2.14.2 in /website (#5878)
 
 #### Dashboards
 
+- feat(grafana): list the countries and cities each car stopped or charged in on the Visited dashboard, with a day-by-day view per city (#5859 - @jheredianet)
+
 #### Translations
+
+- i18n(it): complete Italian web UI translations (#5875 - SiNaPsEr0x)
 
 #### Documentation
 
 - docs(mqtt): describe the Home Assistant discovery cleanup on every start while discovery is disabled (#5845 - @JakobLichterfeld)
 - docs(home-assistant): use the binary_sensor domain for the parking brake entity id (#5861 - @Bascht74)
+- docs(install): require Elixir 1.19+ on Erlang/OTP 28+ in the manual install guides, install it with mise on Debian (#5877 - @JakobLichterfeld)
 
 ## [4.3.0] - 2026-09-29
 
