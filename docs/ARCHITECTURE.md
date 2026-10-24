@@ -163,8 +163,12 @@ fabricating a latitude and longitude. Everything else keeps upstream's shape.
   `sensor.<prefix>_polling_status` (`Active`/`Silent`) onto Tesla's asleep
   semantics - `state: asleep` on the vehicle object and the Tesla
   `408 vehicle unavailable` response for `vehicle_data` - so TeslaMate enters its
-  normal asleep/suspended cycle instead of staying online while parked. Falls
-  back to `XPENG_ASLEEP_AFTER` seconds of telemetry silence.
+  normal asleep/suspended cycle instead of staying online while parked. A drive
+  can hold XPENG's single telemetry session and leave the polling status
+  `Silent`/`Parked` for its whole length, so the sibling odometer and battery
+  entities are a second arousal signal: a step in either keeps the car online
+  for `awake_hold` (45 min) instead of losing the drive. Falls back to
+  `XPENG_ASLEEP_AFTER` seconds of telemetry silence.
 * **XPENG data exports**: `/xpengmate` uploads zips to the history service,
   `export_parser.py` streams the three 1 Hz CSVs into drives/charges/tyres/states
   and `merge_exports/1` reconciles overlapping 30-day windows; `export_import.py`

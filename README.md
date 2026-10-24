@@ -137,6 +137,11 @@ pieces of XPENG-specific enrichment:
   `sensor.<prefix>_polling_status` (`Active` = awake, `Silent` = parked and
   quiet) and returns the Tesla "vehicle unavailable" response while asleep,
   which is what makes TeslaMate enter its normal sleep/suspend behaviour.
+  The relay also reads the integration's odometer and battery: a drive can hold
+  XPENG's single telemetry session, which leaves `polling_status`
+  `Silent`/`Parked` through the whole drive while the passive cloud polls still
+  move those entities — a moving odometer or a battery step therefore wakes the
+  logger for the next 45 minutes instead of losing the drive.
   Configure with `XPENG_SLEEP_STATUS_URL`, `XPENG_SLEEP_STATUS_TOKEN` and
   `XPENG_SLEEP_STATUS_ENTITY`; without it the fallback is
   `XPENG_ASLEEP_AFTER` seconds of telemetry silence (default 900). The status
@@ -285,7 +290,7 @@ Measured on the reference car (XPENG G6 RWD, VIN `…800783`):
 |---|---|
 | Engine provider contract (token, products, vehicle_data, websocket) | offline test suite passes |
 | Live logging through the xpengtoolkit 0.6.16 provider relay | upstream healthy, stream connected, positions written |
-| Parked-car sleep detection | relay reports `asleep` from `polling_status: silent`; TeslaMate logs `Start / :asleep`, state row written; wakes on `Active` |
+| Parked-car sleep detection | relay reports `asleep` from `polling_status: silent`; TeslaMate logs `Start / :asleep`, state row written; wakes on `Active` or on odometer/battery movement (the passive cloud polls that continue through a drive) |
 | Sign-in through the engine | `Starting logger for 'XPENG 800783'`, `Real online detected` |
 | History imported (EVConduit, 2026-08-13 → 2026-10-17) | 343 drives, 25,995 positions, 104 charges, 22,957 charge samples, 645 states |
 | Export enrichment (positions with SoC/odometer/range) | ~93% of imported positions |
