@@ -132,6 +132,13 @@ pieces of XPENG-specific enrichment:
 * the **outside temperature** comes from a Home Assistant sensor when configured;
 * the `XOS` firmware prefix is stripped so version changes are recorded once
   (not as fake updates);
+* **charge telemetry is made insertable**: TeslaMate stores `charger_power`,
+  `charger_voltage`, `charger_actual_current` and the phase/current fields as
+  integers and rejects fractional JSON with "is invalid", which used to throw
+  away every sample of a live charge (the session finished as
+  `Charging / Stopped / 0.00 kWh`). The relay rounds them to whole numbers (a
+  missing value stays missing) before forwarding, so charge curves and session
+  energy record again;
 * a **parked car is reported as asleep**: the provider keeps saying "online" and
   its own threshold is two hours, so the relay watches the integration's
   `sensor.<prefix>_polling_status` (`Active` = awake, `Silent` = parked and

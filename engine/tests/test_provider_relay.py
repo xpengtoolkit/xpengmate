@@ -40,7 +40,16 @@ def build_vehicle() -> dict:
         "vin": VIN,
         "display_name": "XPENG 800783",
         "state": "online",
-        "charge_state": {"battery_level": 59, "battery_range": 196.3},
+        "charge_state": {
+            "battery_level": 59,
+            "battery_range": 196.3,
+            # Fractional values, as xpengtoolkit reports a live XPENG charge.
+            "charge_energy_added": 12.53,
+            "charger_actual_current": 9.4,
+            "charger_phases": 1.0,
+            "charger_power": 6.9,
+            "charger_voltage": 233.6,
+        },
         "climate_state": {},
         "drive_state": {"shift_state": "P"},
         "vehicle_config": {},
@@ -159,6 +168,28 @@ class ProviderRelayTest(unittest.IsolatedAsyncioTestCase):
                 data = await response.json()
             self.assertEqual(data["response"]["charge_state"]["battery_level"], 59)
             self.assertEqual(data["response"]["vehicle_state"]["car_version"], "5.9.5.8909")
+
+    async def test_charge_integer_fields_are_normalised(self) -> None:
+        """TeslaMate casts these to :integer and rejects floats ("is invalid")."""
+        headers = {"Authorization": f"Bearer {LOCAL_TOKEN}"}
+        async with aiohttp.ClientSession() as session:
+            async with session.get(
+                f"{self.base}/api/1/products", headers=headers
+            ) as response:
+                products = await response.json()
+            async with session.get(
+                f"{self.base}/api/1/vehicles/{products['response'][0]['id']}/vehicle_data",
+                headers=headers,
+            ) as response:
+                data = await response.json()
+        charge = data["response"]["charge_state"]
+        self.assertEqual(charge["charger_power"], 7)
+        self.assertEqual(charge["charger_voltage"], 234)
+        self.assertEqual(charge["charger_actual_current"], 9)
+        self.assertEqual(charge["charger_phases"], 1)
+        # Decimals TeslaMate stores as :decimal keep their precision.
+        self.assertEqual(charge["charge_energy_added"], 12.53)
+        self.assertEqual(charge["battery_range"], 196.3)
 
     async def test_streaming_rewrites_the_token(self) -> None:
         async with aiohttp.ClientSession() as session:

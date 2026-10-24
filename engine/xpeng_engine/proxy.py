@@ -28,6 +28,8 @@ except ImportError:  # pragma: no cover
     aiohttp = None
     web = None
 
+from .teslamate_mapping import normalise_charge_state
+
 _LOGGER = logging.getLogger(__name__)
 
 TOKEN_EXPIRES_IN_SECONDS = 3600
@@ -368,12 +370,16 @@ class ProviderProxy:
                 {"error": "upstream_unavailable", "error_description": str(exc)},
                 status=502,
             )
-        body = await self._with_outside_temp(body)
+        body = await self._enrich_vehicle_data(body)
         return web.Response(status=200, body=body, content_type="application/json")
 
-    async def _with_outside_temp(self, body: bytes) -> bytes:
-        """Enrich the upstream vehicle_data before TeslaMate sees it.
+    async def _enrich_vehicle_data(self, body: bytes) -> bytes:
+        """Reshape the upstream vehicle_data before TeslaMate sees it.
 
+        * ``charge_state``'s integer fields are rounded: TeslaMate casts them to
+          ``:integer`` and Ecto rejects a float with "is invalid", which threw
+          away every sample of a live charge while the provider sent fractional
+          values (6.9 kW, 233.6 V) - the charge then finished with 0.00 kWh.
         * ``climate_state.outside_temp`` is replaced by the Home Assistant
           sensor when one is configured, so positions and drive averages use it.
         * ``vehicle_state.car_version`` loses the provider's ``XOS`` prefix:
@@ -387,12 +393,15 @@ class ProviderProxy:
                 value = await self._outside_temp.async_get()
             except Exception:  # noqa: BLE001
                 value = None
-        if value is None and "car_version" not in body.decode("utf-8", "replace"):
+        if value is None and b'"charge_state"' not in body and b'"car_version"' not in body:
             return body
         try:
             payload = json.loads(body)
             vehicle = payload["response"] if isinstance(payload.get("response"), dict) else payload
             changed = False
+            charge = vehicle.get("charge_state")
+            if isinstance(charge, dict) and normalise_charge_state(charge):
+                changed = True
             if value is not None:
                 climate = vehicle.get("climate_state")
                 if isinstance(climate, dict):

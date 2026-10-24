@@ -153,6 +153,52 @@ def as_int(value: Any) -> int | None:
     return None if number is None else int(number)
 
 
+#: The ``charge_state`` fields TeslaMate stores as integers (``Log.Charge``
+#: casts them to ``:integer`` and Ecto rejects a float with "is invalid", which
+#: rejects the whole charge sample). Tesla's API sends whole numbers; XPENG
+#: telemetry is fractional (6.9 kW, 233.6 V), so both the mapping and the relay
+#: normalise them here.
+CHARGE_INTEGER_FIELDS = (
+    "charger_actual_current",
+    "charger_phases",
+    "charger_pilot_current",
+    "charger_power",
+    "charger_voltage",
+)
+
+
+def normalise_charge_state(charge_state: dict[str, Any]) -> bool:
+    """Make the integer charge fields insertable by TeslaMate.
+
+    Returns True when the dict changed. A non-numeric value is removed (nil is
+    acceptable to TeslaMate, a string is not) and a zero/negative
+    ``charger_phases`` is removed because ``validate_number(:charger_phases,
+    greater_than: 0)`` would otherwise reject the entire sample.
+
+    Whole floats count as floats here - ``0.0`` is numerically equal to ``0``
+    but Ecto still refuses it - so every non-``int`` value is rewritten.
+    """
+    changed = False
+    for field in CHARGE_INTEGER_FIELDS:
+        if field not in charge_state:
+            continue
+        value = charge_state.get(field)
+        if value is None:
+            continue
+        number = as_float(value)
+        coerced = None if number is None else int(round(number))
+        if field == "charger_phases" and (coerced is None or coerced <= 0):
+            del charge_state[field]
+            changed = True
+        elif coerced is None:
+            del charge_state[field]
+            changed = True
+        elif isinstance(value, bool) or not isinstance(value, int):
+            charge_state[field] = coerced
+            changed = True
+    return changed
+
+
 def as_bool(value: Any) -> bool | None:
     """A boolean, or None when the field is absent."""
     if value is None:
@@ -503,7 +549,7 @@ def build_charge_state(
     voltage = as_float(dig(snapshot.raw, "interval", "charge", "voltage"))
     remaining_min = as_float(charge.get("time_to_complete_charge_min"))
     timestamp = _timestamp_ms(snapshot)
-    return {
+    charge_state = {
         "battery_level": soc,
         "usable_battery_level": soc,
         "battery_range": range_miles,
@@ -552,6 +598,10 @@ def build_charge_state(
         "charge_port_cold_weather_mode": None,
         "timestamp": timestamp,
     }
+    # TeslaMate stores these as integers; XPENG's fractional telemetry would be
+    # rejected with "is invalid" and take the whole charge sample with it.
+    normalise_charge_state(charge_state)
+    return charge_state
 
 
 def _level(value: Any) -> int | None:
