@@ -1,0 +1,161 @@
+<nav class="breadcrumb" aria-label="breadcrumbs">
+  <ul>
+    <li><.link navigate={~p"/"}>{gettext("Home")}</.link></li>
+    <li><.link navigate={~p"/setups"}>{gettext("Setups")}</.link></li>
+    <li class="is-active">
+      <a href="#">
+        {case @action do
+          :new -> Ecto.Changeset.get_field(@changeset, :label) || gettext("New setup")
+          :edit -> @setup.label
+        end}
+      </a>
+    </li>
+  </ul>
+</nav>
+
+<h1 class="title is-3">
+  {case @action do
+    :new -> gettext("New setup")
+    :edit -> gettext("Edit setup")
+  end}
+</h1>
+
+<p class="subtitle is-6">
+  {gettext(
+    "A setup is one aspect over an inclusive date range. Aspects are independent, so a tyre change and a roof box may overlap; a drive is attributed to the newest setup of each aspect that covers its date."
+  )}
+</p>
+
+<.form :let={f} for={@changeset} id="setup" phx-change="validate" phx-submit="save">
+  <div class="field is-horizontal">
+    <div class="field-label is-normal">
+      {label(f, :car_id, gettext("Car"), class: "label")}
+    </div>
+    <div class="field-body">
+      <div class="field">
+        <div class="control">
+          <div class="select is-fullwidth">
+            {select(f, :car_id, car_options(@cars), prompt: gettext("Select a car"))}
+          </div>
+        </div>
+        <%= if @show_errors do %>
+          <p class="help is-danger">{error_tag(f, :car_id)}</p>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <div class="field is-horizontal">
+    <div class="field-label is-normal">
+      {label(f, :aspect, gettext("Aspect"), class: "label")}
+    </div>
+    <div class="field-body">
+      <div class="field">
+        <div class="control">
+          <div class="select is-fullwidth">
+            {select(f, :aspect, aspect_options(), prompt: gettext("Select an aspect"))}
+          </div>
+        </div>
+        <%= if @show_errors do %>
+          <p class="help is-danger">{error_tag(f, :aspect)}</p>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <div class="field is-horizontal">
+    <div class="field-label is-normal">
+      {label(f, :label, gettext("Label"), class: "label")}
+    </div>
+    <div class="field-body">
+      <div class="field is-expanded">
+        <div class="control">
+          {text_input(f, :label,
+            class: "input",
+            list: "known-labels",
+            placeholder: gettext("Michelin Pilot Sport 4 255/45R20")
+          )}
+          <datalist id="known-labels">
+            <%= for suggestion <- @label_suggestions do %>
+              <option value={suggestion}></option>
+            <% end %>
+          </datalist>
+        </div>
+        <p class="help">
+          {gettext("What the aspect was set to, in your own words.")}
+        </p>
+        <%= if @show_errors do %>
+          <p class="help is-danger">{error_tag(f, :label)}</p>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <div class="field is-horizontal">
+    <div class="field-label is-normal">
+      {label(f, :started_at, gettext("From"), class: "label")}
+    </div>
+    <div class="field-body">
+      <div class="field">
+        <div class="control">
+          {date_input(f, :started_at, class: "input")}
+        </div>
+        <%= if @show_errors do %>
+          <p class="help is-danger">{error_tag(f, :started_at)}</p>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <div class="field is-horizontal">
+    <div class="field-label is-normal">
+      {label(f, :ended_at, gettext("Until"), class: "label")}
+    </div>
+    <div class="field-body">
+      <div class="field">
+        <div class="control">
+          {date_input(f, :ended_at, class: "input")}
+        </div>
+        <p class="help">
+          {gettext("Leave empty while it is still fitted.")}
+        </p>
+        <%= if @show_errors do %>
+          <p class="help is-danger">{error_tag(f, :ended_at)}</p>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <div class="field is-horizontal">
+    <div class="field-label is-normal">
+      {label(f, :notes, gettext("Notes"), class: "label")}
+    </div>
+    <div class="field-body">
+      <div class="field">
+        <div class="control">
+          {textarea(f, :notes, class: "textarea", rows: 4)}
+        </div>
+        <%= if @show_errors do %>
+          <p class="help is-danger">{error_tag(f, :notes)}</p>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <div class="field is-horizontal mt-5">
+    <div class="field-label"></div>
+    <div class="field-body">
+      <div class="field is-grouped">
+        <div class="control">
+          <.link navigate={~p"/setups"} class="button">{gettext("Back")}</.link>
+        </div>
+        <div class="control">
+          {submit(gettext("Save"),
+            phx_disable_with: gettext("Saving..."),
+            class: "button is-primary"
+          )}
+        </div>
+      </div>
+    </div>
+  </div>
+</.form>

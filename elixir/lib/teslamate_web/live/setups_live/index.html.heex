@@ -1,0 +1,229 @@
+<nav class="breadcrumb" aria-label="breadcrumbs">
+  <ul>
+    <li><.link navigate={~p"/"}>{gettext("Home")}</.link></li>
+    <li class="is-active">
+      <.link navigate={~p"/setups"}>{gettext("Setups")}</.link>
+    </li>
+  </ul>
+</nav>
+
+<div class="is-flex mb-4" style="align-items: flex-start; justify-content: space-between;">
+  <div>
+    <h1 class="title is-3 is-marginless">{gettext("Setups")}</h1>
+    <p class="subtitle is-6 mt-2">
+      {gettext(
+        "Tyres, towing, roof rack and load are independent aspects and their date ranges may overlap. Drives are tagged by date, so correcting a date re-tags history."
+      )}
+    </p>
+  </div>
+  <.link navigate={~p"/setups/new"} class="button is-primary is-small is-rounded">
+    <span>{gettext("Add setup")}</span>
+    <span class="icon">
+      <span class="mdi mdi-plus"></span>
+    </span>
+  </.link>
+</div>
+
+<%= if @cars == [] do %>
+  <div class="notification is-info is-light">
+    <p>{gettext("No cars yet. Add a car first, then record its setups.")}</p>
+    <p class="mt-2">
+      <.link navigate={~p"/"} class="button is-small">{gettext("Go to the garage")}</.link>
+    </p>
+  </div>
+<% else %>
+  <%= if @setup_groups == [] do %>
+    <div class="notification is-info is-light">
+      {gettext(
+        "No setups recorded yet. Add one to compare consumption between tyres, towing, a roof rack or a load."
+      )}
+    </div>
+  <% else %>
+    <%= if MapSet.size(@overlapping_ids) > 0 do %>
+      <div class="notification is-warning is-light">
+        {gettext(
+          "Some ranges overlap for the same car and aspect. A drive is attributed to the setup with the newest start date."
+        )}
+      </div>
+    <% end %>
+
+    <div class="table-container">
+      <table class="table is-fullwidth is-hoverable">
+        <thead class="is-hidden-mobile">
+          <tr>
+            <th>{gettext("Label")}</th>
+            <th>{gettext("From")}</th>
+            <th>{gettext("Until")}</th>
+            <th class="has-text-right">{gettext("Drives")}</th>
+            <th class="is-hidden-mobile">{gettext("Notes")}</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody style="font-variant-numeric: tabular-nums;">
+          <%= for %{car: car, aspects: aspects} <- @setup_groups do %>
+            <tr>
+              <td colspan="6" class="has-text-weight-semibold has-background-white-ter">
+                <span class="icon"><i class="mdi mdi-car-electric"></i></span>
+                {CarTitle.title(car)}
+                <%= if car.name not in [nil, ""] do %>
+                  <span class="has-text-weight-light has-text-grey is-size-7">
+                    {elem(CarTitle.format(car.name, car.vin), 1)}
+                  </span>
+                <% end %>
+              </td>
+            </tr>
+            <%= for %{aspect: aspect, setups: setups} <- aspects do %>
+              <tr>
+                <td colspan="6" class="has-text-weight-semibold has-text-grey-dark">
+                  {aspect_label(aspect)}
+                </td>
+              </tr>
+              <%= for setup <- setups do %>
+                <tr
+                  id={"setup_#{setup.id}"}
+                  class={
+                    if MapSet.member?(@overlapping_ids, setup.id),
+                      do: "has-background-warning-light"
+                  }
+                >
+                  <td class="has-text-weight-medium" style="min-width: 0; max-width: 260px">
+                    {setup.label}
+                    <%= if MapSet.member?(@overlapping_ids, setup.id) do %>
+                      <span class="tag is-warning ml-2">{gettext("Overlapping range")}</span>
+                    <% end %>
+                  </td>
+                  <td class="has-text-weight-light">{format_date(setup.started_at)}</td>
+                  <td class="has-text-weight-light">{format_until(setup.ended_at)}</td>
+                  <td class="has-text-right">
+                    {Map.get(@drive_counts, setup.id, 0)}
+                  </td>
+                  <td class="has-text-weight-light is-hidden-mobile">
+                    {setup.notes || "—"}
+                  </td>
+                  <td>
+                    <div class="field is-grouped is-pulled-right">
+                      <p class="control">
+                        <.link
+                          navigate={
+                            Routes.live_path(
+                              @socket,
+                              TeslaMateWeb.SetupsLive.Form,
+                              setup,
+                              []
+                            )
+                          }
+                          class="button is-info is-small is-inverted is-light"
+                        >
+                          <span class="icon">
+                            <span class="mdi mdi-square-edit-outline"></span>
+                          </span>
+                        </.link>
+                      </p>
+                      <p class="control">
+                        <button
+                          type="button"
+                          id={"delete_#{setup.id}"}
+                          class="button is-danger is-small is-inverted is-light"
+                          phx-click="delete"
+                          phx-value-id={setup.id}
+                          data-confirm={
+                            gettext("Delete the setup \"%{label}\"?", label: setup.label)
+                          }
+                        >
+                          <span class="icon">
+                            <span class="mdi mdi-trash-can"></span>
+                          </span>
+                        </button>
+                      </p>
+                    </div>
+                  </td>
+                </tr>
+              <% end %>
+            <% end %>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% end %>
+
+  <%!-- No setups means no aspect to compare, so the section only appears once
+  there is something to compare. --%>
+  <%= if @comparison_groups != [] do %>
+    <section id="comparison">
+      <div class="is-flex mb-2" style="align-items: center; justify-content: space-between;">
+        <h2 class="title is-4 is-marginless">{gettext("Consumption comparison")}</h2>
+        <%= if @grafana_url do %>
+          <a
+            href={"#{@grafana_url}/d/xpengmate-setups"}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="button is-small is-text"
+          >
+            <span class="icon"><i class="mdi mdi-view-dashboard"></i></span>
+            <span>{gettext("Setups dashboard")}</span>
+          </a>
+        <% end %>
+      </div>
+
+      <p class="help">
+        {gettext("Drives are attributed by their local calendar day in %{timezone}.",
+          timezone: @timezone
+        )}
+      </p>
+
+      <%= for group <- @comparison_groups do %>
+        <h3 class="title is-6 mt-5">
+          {group.car_name} · {aspect_label(group.aspect)}
+        </h3>
+        <div class="table-container">
+          <table
+            class="table is-fullwidth is-hoverable"
+            data-car-id={group.car_id}
+            data-aspect={group.aspect}
+          >
+            <thead>
+              <tr>
+                <th>{gettext("Setup")}</th>
+                <th class="has-text-right">{gettext("Drives")}</th>
+                <th class="has-text-right">{gettext("Distance")}</th>
+                <th class="has-text-right">{gettext("Consumption")}</th>
+                <th class="has-text-right is-hidden-mobile">
+                  {gettext("Avg. outside temperature")}
+                </th>
+                <th class="has-text-right is-hidden-mobile">{gettext("Avg. speed")}</th>
+              </tr>
+            </thead>
+            <tbody style="font-variant-numeric: tabular-nums;">
+              <%= for row <- group.rows do %>
+                <tr class={if is_nil(row.label), do: "has-text-grey"}>
+                  <td class="has-text-weight-medium">
+                    {row.label || gettext("Not recorded")}
+                  </td>
+                  <td class="has-text-right">{row.drives}</td>
+                  <td class="has-text-right">
+                    {format_distance(row.distance_km, @unit_of_length)}
+                  </td>
+                  <td class="has-text-right">
+                    {format_consumption(row.consumption_wh_km, @unit_of_length)}
+                  </td>
+                  <td class="has-text-right is-hidden-mobile">
+                    {format_temperature(row.avg_outside_temp_c, @unit_of_temperature)}
+                  </td>
+                  <td class="has-text-right is-hidden-mobile">
+                    {format_speed(row.avg_speed_kmh, @unit_of_length)}
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      <% end %>
+
+      <p class="help mt-4">
+        {gettext(
+          "\"Not recorded\" is the baseline: no setup of that aspect covered the drive. Distance and energy are TeslaMate's rated-range estimate, so consumption agrees with the Efficiency dashboard."
+        )}
+      </p>
+    </section>
+  <% end %>
+<% end %>

@@ -1,0 +1,986 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "links": [
+    {
+      "icon": "dashboard",
+      "tags": [],
+      "targetBlank": true,
+      "title": "XpengMate",
+      "tooltip": "",
+      "type": "link",
+      "url": "${base_url:raw}"
+    },
+    {
+      "asDropdown": true,
+      "icon": "external link",
+      "tags": [
+        "tesla"
+      ],
+      "title": "Dashboards",
+      "type": "dashboards"
+    }
+  ],
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "panels": [],
+      "repeat": "car_id",
+      "title": "$car_id",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "TeslaMate"
+      },
+      "description": "Setups that have started and have no end date, by aspect.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "none"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "text",
+                "value": 0
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 6,
+        "x": 0,
+        "y": 1
+      },
+      "id": 2,
+      "options": {
+        "colorMode": "none",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "horizontal",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "value",
+        "wideLayout": true
+      },
+      "pluginVersion": "13.2.1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "TeslaMate"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "-- What the car is running now: the open-ended setups that have already started.\nSELECT\n  COALESCE(\n    string_agg(initcap(replace(aspect, '_', ' ')) || ': ' || label, ' · ' ORDER BY aspect),\n    'No setup recorded'\n  ) AS \"current_setup\"\nFROM car_setups\nWHERE car_id IN ($car_id)\n  AND ended_at IS NULL\n  AND started_at <= current_date;\n",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Current setup",
+      "type": "stat"
+    },
+    {
+      "gridPos": {
+        "h": 5,
+        "w": 18,
+        "x": 6,
+        "y": 1
+      },
+      "id": 3,
+      "options": {
+        "code": {
+          "language": "plaintext",
+          "showLineNumbers": false,
+          "showMiniMap": false
+        },
+        "content": "### How drives are attributed\n\nA setup is **one aspect** of the car over an **inclusive** date range: the tyres\nthat were fitted, a trailer being towed, a roof box, a load. Aspects are\nindependent, so their ranges may overlap - fitting new tyres does not end a\nroof box period.\n\nEach drive is attributed to the **newest** setup of each aspect (the highest\nstart date) whose range covers the drive's **local calendar day**. That is the\nday the owner changed the setup, not the UTC day, so one drive can appear under\ntyres *and* under towing. Nothing is written onto the drive: correcting a date\nrange re-tags the history instead of leaving stale tags behind.\n\n**Not recorded** is the baseline for an aspect that has setups but none covering\na drive; it is what a tyre change, a trailer or a roof box is compared against.\nOnly aspects with at least one setup appear here - add one on the `/setups`\npage in the app.\n\nEnergy is the same estimate as the Efficiency dashboard: the preferred range\ndrop times the car's efficiency. Drives without a usable range drop are left\nout. The *min. distance per drive* filter excludes short trips, and the dashboard's time range limits the drives considered. The /setups page in the app applies neither, so its totals cover every drive.",
+        "mode": "markdown"
+      },
+      "pluginVersion": "13.2.1",
+      "title": "How setups are attributed",
+      "type": "text"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "TeslaMate"
+      },
+      "description": "Consumption per setup label, coloured by aspect. Bar length is the average consumed per 100 distance units; *Not recorded* is the baseline.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisGridShow": false,
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "axisWidth": -10,
+            "fillOpacity": 85,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineWidth": 1,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "consumption_km"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Consumption"
+              },
+              {
+                "id": "unit",
+                "value": "suffix: kWh/100km"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "consumption_mi"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Consumption"
+              },
+              {
+                "id": "unit",
+                "value": "suffix: kWh/100mi"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "aspect"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "tyres": {
+                        "text": "Tyres",
+                        "color": "blue",
+                        "index": 0
+                      },
+                      "towing": {
+                        "text": "Towing",
+                        "color": "orange",
+                        "index": 1
+                      },
+                      "roof_rack": {
+                        "text": "Roof rack",
+                        "color": "green",
+                        "index": 2
+                      },
+                      "loaded": {
+                        "text": "Loaded",
+                        "color": "purple",
+                        "index": 3
+                      },
+                      "other": {
+                        "text": "Other",
+                        "color": "yellow",
+                        "index": 4
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 12,
+        "x": 0,
+        "y": 6
+      },
+      "id": 4,
+      "options": {
+        "barRadius": 0.05,
+        "barWidth": 0.85,
+        "colorByField": "aspect",
+        "fullHighlight": false,
+        "groupWidth": 0.7,
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "overflow": "ellipsis",
+          "placement": "bottom",
+          "showLegend": false
+        },
+        "orientation": "horizontal",
+        "showValue": "auto",
+        "stacking": "none",
+        "text": {},
+        "tooltip": {
+          "hideZeros": false,
+          "maxHeight": 600,
+          "mode": "multi",
+          "sort": "none"
+        },
+        "xField": "setup",
+        "xTickLabelRotation": 0,
+        "xTickLabelSpacing": 100
+      },
+      "pluginVersion": "13.2.1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "TeslaMate"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "-- Consumption per setup label, grouped by aspect. \"Not recorded\" is the\n-- baseline for aspects that have setups but no covering row for a drive.\nWITH aspects AS (\n  SELECT DISTINCT car_id, aspect\n  FROM car_setups\n),\nbase AS (\n  SELECT\n    d.car_id,\n    d.start_date,\n    d.distance,\n    d.start_${preferred_range}_range_km - d.end_${preferred_range}_range_km AS range_km,\n    c.efficiency\n  FROM drives d\n  INNER JOIN cars c ON c.id = d.car_id\n  WHERE d.car_id IN ($car_id)\n    AND d.start_date IS NOT NULL\n    AND d.distance IS NOT NULL\n    AND c.efficiency IS NOT NULL\n    AND d.start_${preferred_range}_range_km IS NOT NULL\n    AND d.end_${preferred_range}_range_km IS NOT NULL\n    AND d.start_${preferred_range}_range_km - d.end_${preferred_range}_range_km >= 0.1\n    AND convert_km(d.distance::numeric, '$length_unit') >= $min_distance\n    AND $__timeFilter(d.start_date)\n),\ntagged AS (\n  SELECT\n    b.*,\n    a.aspect,\n    (SELECT s.label\n       FROM car_setups s\n      WHERE s.car_id = b.car_id\n        AND s.aspect = a.aspect\n        AND timezone('$__timezone', timezone('UTC', b.start_date))::date\n            BETWEEN s.started_at AND COALESCE(s.ended_at, 'infinity'::date)\n      ORDER BY s.started_at DESC\n      LIMIT 1) AS setup_label\n  FROM base b\n  INNER JOIN aspects a ON a.car_id = b.car_id\n),\nagg AS (\n  SELECT\n    aspect,\n    setup_label,\n    sum(distance) AS distance_km,\n    sum(range_km * efficiency) AS energy_kwh\n  FROM tagged\n  GROUP BY aspect, setup_label\n)\nSELECT\n  initcap(replace(aspect, '_', ' ')) || ' · ' || COALESCE(setup_label, 'Not recorded') AS \"setup\",\n  aspect,\n  round((energy_kwh / NULLIF(convert_km(distance_km::numeric, '$length_unit'), 0) * 100)::numeric, 1) AS \"consumption_$length_unit\"\nFROM agg\nWHERE distance_km > 0 AND energy_kwh IS NOT NULL\nORDER BY CASE aspect\n    WHEN 'tyres' THEN 1\n    WHEN 'towing' THEN 2\n    WHEN 'roof_rack' THEN 3\n    WHEN 'loaded' THEN 4\n    ELSE 5\n  END,\n  setup_label NULLS FIRST;\n",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Consumption by setup",
+      "type": "barchart"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "TeslaMate"
+      },
+      "description": "Consumption per local calendar month, split by the tyres label that covered each drive, so a tyre change is visible.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "decimals": 1,
+          "displayName": "${__field.labels.tyres}",
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "consumption_km"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "suffix: kWh/100km"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "consumption_mi"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "suffix: kWh/100mi"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 12,
+        "x": 12,
+        "y": 6
+      },
+      "id": 5,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "overflow": "ellipsis",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "maxHeight": 600,
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "13.2.1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "TeslaMate"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "-- Consumption per local calendar month, one series per tyres label, so a tyre\n-- change shows up as a change between the series.\nWITH base AS (\n  SELECT\n    d.car_id,\n    d.start_date,\n    d.distance,\n    d.start_${preferred_range}_range_km - d.end_${preferred_range}_range_km AS range_km,\n    c.efficiency\n  FROM drives d\n  INNER JOIN cars c ON c.id = d.car_id\n  WHERE d.car_id IN ($car_id)\n    AND d.start_date IS NOT NULL\n    AND d.distance IS NOT NULL\n    AND c.efficiency IS NOT NULL\n    AND d.start_${preferred_range}_range_km IS NOT NULL\n    AND d.end_${preferred_range}_range_km IS NOT NULL\n    AND d.start_${preferred_range}_range_km - d.end_${preferred_range}_range_km >= 0.1\n    AND convert_km(d.distance::numeric, '$length_unit') >= $min_distance\n    AND $__timeFilter(d.start_date)\n),\ntagged AS (\n  SELECT\n    b.*,\n    (SELECT s.label\n       FROM car_setups s\n      WHERE s.car_id = b.car_id\n        AND s.aspect = 'tyres'\n        AND timezone('$__timezone', timezone('UTC', b.start_date))::date\n            BETWEEN s.started_at AND COALESCE(s.ended_at, 'infinity'::date)\n      ORDER BY s.started_at DESC\n      LIMIT 1) AS tyres_label\n  FROM base b\n)\nSELECT\n  date_trunc('month', timezone('$__timezone', timezone('UTC', start_date))) AS \"time\",\n  round((sum(range_km * efficiency) / NULLIF(convert_km(sum(distance)::numeric, '$length_unit'), 0) * 100)::numeric, 1) AS \"consumption_$length_unit\",\n  COALESCE(tyres_label, 'Not recorded') AS \"tyres\"\nFROM tagged\nGROUP BY 1, 3\nORDER BY 1, 3;\n",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Consumption over time by tyres",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "TeslaMate"
+      },
+      "description": "Drives, distance, energy, consumption, average outside temperature and average speed per car, aspect and setup label, including the *Not recorded* baseline.",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "filterable": false,
+            "footer": {
+              "reducers": []
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "car"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Car"
+              },
+              {
+                "id": "custom.width",
+                "value": 180
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "aspect"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Aspect"
+              },
+              {
+                "id": "custom.width",
+                "value": 110
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "tyres": {
+                        "text": "Tyres",
+                        "color": "blue",
+                        "index": 0
+                      },
+                      "towing": {
+                        "text": "Towing",
+                        "color": "orange",
+                        "index": 1
+                      },
+                      "roof_rack": {
+                        "text": "Roof rack",
+                        "color": "green",
+                        "index": 2
+                      },
+                      "loaded": {
+                        "text": "Loaded",
+                        "color": "purple",
+                        "index": 3
+                      },
+                      "other": {
+                        "text": "Other",
+                        "color": "yellow",
+                        "index": 4
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "setup"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Setup"
+              },
+              {
+                "id": "custom.width",
+                "value": 300
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "drives"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Drives"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              },
+              {
+                "id": "custom.width",
+                "value": 80
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "distance_km"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Distance"
+              },
+              {
+                "id": "unit",
+                "value": "km"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "distance_mi"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Distance"
+              },
+              {
+                "id": "unit",
+                "value": "mi"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "energy_kwh"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Energy"
+              },
+              {
+                "id": "unit",
+                "value": "kwatth"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "consumption_km"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Consumption"
+              },
+              {
+                "id": "unit",
+                "value": "suffix: kWh/100km"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "consumption_mi"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Consumption"
+              },
+              {
+                "id": "unit",
+                "value": "suffix: kWh/100mi"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "avg_outside_temp_C"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Temperature"
+              },
+              {
+                "id": "unit",
+                "value": "celsius"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "avg_outside_temp_F"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Temperature"
+              },
+              {
+                "id": "unit",
+                "value": "fahrenheit"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "avg_speed_km"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Speed"
+              },
+              {
+                "id": "unit",
+                "value": "velocitykmh"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "avg_speed_mi"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Speed"
+              },
+              {
+                "id": "unit",
+                "value": "velocitymph"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 24,
+        "x": 0,
+        "y": 18
+      },
+      "id": 6,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "pluginVersion": "13.2.1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "TeslaMate"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "-- One row per car, aspect and setup label. A drive belongs to the newest setup\n-- of each aspect (highest started_at) whose inclusive range covers the drive's\n-- local calendar day; a NULL label is the baseline, rendered \"Not recorded\".\nWITH aspects AS (\n  SELECT DISTINCT car_id, aspect\n  FROM car_setups\n),\nbase AS (\n  SELECT\n    d.car_id,\n    COALESCE(NULLIF(c.name, ''), 'Car ' || c.id::text) AS car_name,\n    c.efficiency,\n    d.start_date,\n    d.distance,\n    d.duration_min,\n    d.outside_temp_avg,\n    d.start_${preferred_range}_range_km - d.end_${preferred_range}_range_km AS range_km\n  FROM drives d\n  INNER JOIN cars c ON c.id = d.car_id\n  WHERE d.car_id = $car_id\n    AND d.start_date IS NOT NULL\n    AND d.distance IS NOT NULL\n    AND c.efficiency IS NOT NULL\n    AND d.start_${preferred_range}_range_km IS NOT NULL\n    AND d.end_${preferred_range}_range_km IS NOT NULL\n    AND d.start_${preferred_range}_range_km - d.end_${preferred_range}_range_km >= 0.1\n    AND convert_km(d.distance::numeric, '$length_unit') >= $min_distance\n    AND $__timeFilter(d.start_date)\n),\ntagged AS (\n  SELECT\n    b.*,\n    a.aspect,\n    (SELECT s.label\n       FROM car_setups s\n      WHERE s.car_id = b.car_id\n        AND s.aspect = a.aspect\n        AND timezone('$__timezone', timezone('UTC', b.start_date))::date\n            BETWEEN s.started_at AND COALESCE(s.ended_at, 'infinity'::date)\n      ORDER BY s.started_at DESC\n      LIMIT 1) AS setup_label\n  FROM base b\n  INNER JOIN aspects a ON a.car_id = b.car_id\n),\nagg AS (\n  SELECT\n    car_name,\n    aspect,\n    setup_label,\n    count(*) AS drives,\n    sum(distance) AS distance_km,\n    sum(range_km * efficiency) AS energy_kwh,\n    avg(outside_temp_avg) AS avg_outside_temp_c,\n    sum(distance) / NULLIF(sum(duration_min) / 60.0, 0) AS avg_speed_kmh\n  FROM tagged\n  GROUP BY car_name, aspect, setup_label\n)\nSELECT\n  car_name AS \"car\",\n  aspect,\n  COALESCE(setup_label, 'Not recorded') AS \"setup\",\n  drives,\n  round(convert_km(distance_km::numeric, '$length_unit'), 0) AS \"distance_$length_unit\",\n  round(energy_kwh::numeric, 2) AS \"energy_kwh\",\n  round((energy_kwh / NULLIF(convert_km(distance_km::numeric, '$length_unit'), 0) * 100)::numeric, 1) AS \"consumption_$length_unit\",\n  round(convert_celsius(avg_outside_temp_c, '$temp_unit')::numeric, 1) AS \"avg_outside_temp_$temp_unit\",\n  round(convert_km(avg_speed_kmh::numeric, '$length_unit'), 0) AS \"avg_speed_$length_unit\"\nFROM agg\nORDER BY car_name,\n  CASE aspect\n    WHEN 'tyres' THEN 1\n    WHEN 'towing' THEN 2\n    WHEN 'roof_rack' THEN 3\n    WHEN 'loaded' THEN 4\n    ELSE 5\n  END,\n  setup_label NULLS FIRST;\n",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Setups",
+      "type": "table"
+    }
+  ],
+  "preload": false,
+  "refresh": "",
+  "schemaVersion": 42,
+  "tags": [
+    "tesla"
+  ],
+  "templating": {
+    "list": [
+      {
+        "current": {},
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "TeslaMate"
+        },
+        "definition": "SELECT\n    id as __value,\n    CASE WHEN COUNT(id) OVER (PARTITION BY name) > 1 AND name IS NOT NULL THEN CONCAT(name, ' - ', RIGHT(vin, 6)) ELSE COALESCE(name, CONCAT('VIN ', vin)) end as __text \nFROM cars\nORDER BY display_priority ASC, name ASC, vin ASC;",
+        "hide": 2,
+        "includeAll": true,
+        "label": "Car",
+        "name": "car_id",
+        "options": [],
+        "query": "SELECT\n    id as __value,\n    CASE WHEN COUNT(id) OVER (PARTITION BY name) > 1 AND name IS NOT NULL THEN CONCAT(name, ' - ', RIGHT(vin, 6)) ELSE COALESCE(name, CONCAT('VIN ', vin)) end as __text \nFROM cars\nORDER BY display_priority ASC, name ASC, vin ASC;",
+        "refresh": 1,
+        "regex": "",
+        "regexApplyTo": "value",
+        "type": "query"
+      },
+      {
+        "current": {},
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "TeslaMate"
+        },
+        "definition": "select unit_of_temperature from settings limit 1;",
+        "hide": 2,
+        "includeAll": false,
+        "name": "temp_unit",
+        "options": [],
+        "query": "select unit_of_temperature from settings limit 1;",
+        "refresh": 1,
+        "regex": "",
+        "regexApplyTo": "value",
+        "type": "query"
+      },
+      {
+        "current": {},
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "TeslaMate"
+        },
+        "definition": "select unit_of_length from settings limit 1;",
+        "hide": 2,
+        "includeAll": false,
+        "name": "length_unit",
+        "options": [],
+        "query": "select unit_of_length from settings limit 1;",
+        "refresh": 1,
+        "regex": "",
+        "regexApplyTo": "value",
+        "type": "query"
+      },
+      {
+        "current": {},
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "TeslaMate"
+        },
+        "definition": "select preferred_range from settings limit 1;",
+        "hide": 2,
+        "includeAll": false,
+        "name": "preferred_range",
+        "options": [],
+        "query": "select preferred_range from settings limit 1;",
+        "refresh": 1,
+        "regex": "",
+        "regexApplyTo": "value",
+        "type": "query"
+      },
+      {
+        "current": {
+          "text": "1",
+          "value": "1"
+        },
+        "includeAll": false,
+        "label": "min. distance per drive",
+        "name": "min_distance",
+        "options": [],
+        "query": "1, 5, 10, 25, 50",
+        "type": "custom",
+        "valuesFormat": "csv"
+      },
+      {
+        "current": {},
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "TeslaMate"
+        },
+        "definition": "select base_url from settings limit 1;",
+        "hide": 2,
+        "includeAll": false,
+        "name": "base_url",
+        "options": [],
+        "query": "select base_url from settings limit 1;",
+        "refresh": 1,
+        "regex": "",
+        "regexApplyTo": "value",
+        "type": "query"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-10y",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Setups",
+  "weekStart": "",
+  "version": 1,
+  "uid": "xpengmate-setups"
+}
