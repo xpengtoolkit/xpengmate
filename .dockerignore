@@ -9,6 +9,9 @@ elixir/test/
 elixir/priv/static/assets
 **/node_modules
 import/
+# Runtime state and secrets (bind-mounted into the containers, written by them
+# as root). Nothing in any image is built from this directory.
+data/
 teslamate.bck
 ._*
 .DS_Store
