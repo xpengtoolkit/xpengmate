@@ -36,6 +36,7 @@ defmodule TeslaMateWeb.XpengMateLive.Index do
       |> assign(source_form: to_form(source_params(%{}), as: :source))
       |> assign(credentials_form: to_form(%{"vin" => ""}, as: :credentials))
       |> assign(history_form: to_form(history_params(%{}), as: :history))
+      |> assign(agent_form: to_form(agent_form_params(), as: :agent), agent_test: nil)
       |> allow_upload(:ca_chain, accept: :any, max_entries: 1, max_file_size: 2_000_000)
       |> allow_upload(:client_cert, accept: :any, max_entries: 1, max_file_size: 2_000_000)
       |> allow_upload(:client_key, accept: :any, max_entries: 1, max_file_size: 2_000_000)
@@ -69,7 +70,13 @@ defmodule TeslaMateWeb.XpengMateLive.Index do
     exports = fetch_exports()
 
     socket
-    |> assign(loading: false, engine: engine, history: history, exports: exports)
+    |> assign(
+      loading: false,
+      engine: engine,
+      history: history,
+      exports: exports,
+      agent: TeslaMate.Agent.status()
+    )
     |> maybe_hydrate()
     |> schedule_refresh(history, exports)
   end
@@ -135,6 +142,7 @@ defmodule TeslaMateWeb.XpengMateLive.Index do
 
   def handle_event("test_source", params, socket) do
     params = Map.merge(socket.assigns.source_form.params, Map.drop(params, ["value", "_target"]))
+
     payload =
       %{
         "source" => params["source"],
@@ -148,8 +156,11 @@ defmodule TeslaMateWeb.XpengMateLive.Index do
       |> Map.new()
 
     case Client.test_source(payload) do
-      {:ok, result} -> {:noreply, assign(socket, test_result: result)}
-      {:error, reason} -> {:noreply, assign(socket, test_result: %{"ok" => false, "error" => reason})}
+      {:ok, result} ->
+        {:noreply, assign(socket, test_result: result)}
+
+      {:error, reason} ->
+        {:noreply, assign(socket, test_result: %{"ok" => false, "error" => reason})}
     end
   end
 
@@ -256,6 +267,65 @@ defmodule TeslaMateWeb.XpengMateLive.Index do
     end
   end
 
+  # -- assistant ---------------------------------------------
+
+  def handle_event("validate_agent", %{"agent" => params}, socket) do
+    {:noreply, assign(socket, agent_form: to_form(params, as: :agent))}
+  end
+
+  def handle_event("save_agent", %{"agent" => params}, socket) do
+    attrs = %{
+      "api_key" => params["api_key"],
+      "model" => params["model"],
+      "base_url" => params["base_url"],
+      "daily_limit" => params["daily_limit"],
+      "enabled" => params["enabled"] in ["true", "on", "1"]
+    }
+
+    case TeslaMate.Agent.update_settings(attrs) do
+      {:ok, _settings} ->
+        {:noreply,
+         socket
+         |> assign(
+           agent_form: to_form(agent_form_params(), as: :agent),
+           agent: TeslaMate.Agent.status(),
+           agent_test: nil
+         )
+         |> put_flash(:info, gettext("Assistant settings saved."))}
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        {:noreply,
+         socket
+         |> assign(agent_form: to_form(params, as: :agent))
+         |> put_flash(:error, assistant_error(changeset))}
+    end
+  end
+
+  def handle_event("test_agent", _params, socket) do
+    params = socket.assigns.agent_form.params
+
+    result =
+      TeslaMate.Agent.verify_key(%{
+        "api_key" => params["api_key"],
+        "base_url" => params["base_url"]
+      })
+
+    {:noreply, assign(socket, agent_test: result)}
+  end
+
+  def handle_event("clear_agent_key", _params, socket) do
+    {:ok, _settings} = TeslaMate.Agent.clear_api_key()
+
+    {:noreply,
+     socket
+     |> assign(
+       agent_form: to_form(agent_form_params(), as: :agent),
+       agent: TeslaMate.Agent.status(),
+       agent_test: nil
+     )
+     |> put_flash(:info, gettext("API key removed."))}
+  end
+
   # -- helpers -----------------------------------------------
 
   defp fetch_engine do
@@ -360,6 +430,37 @@ defmodule TeslaMateWeb.XpengMateLive.Index do
       params
     )
   end
+
+  defp agent_form_params do
+    settings = TeslaMate.Agent.get_settings()
+
+    %{
+      "api_key" => "",
+      "model" => settings.model || "deepseek-flash",
+      "base_url" => settings.base_url || "https://api.deepseek.com",
+      "daily_limit" => to_string(settings.daily_limit || 60),
+      "enabled" => if(settings.enabled, do: "true", else: "false")
+    }
+  end
+
+  defp assistant_error(%Ecto.Changeset{} = changeset) do
+    messages =
+      changeset
+      |> Ecto.Changeset.traverse_errors(fn {message, opts} ->
+        Enum.reduce(opts, message, fn {key, value}, acc ->
+          String.replace(acc, "%{#{key}}", to_string(value))
+        end)
+      end)
+      |> Enum.flat_map(fn {field, errors} ->
+        Enum.map(errors, fn error -> "#{field}: #{error}" end)
+      end)
+
+    gettext("Could not save the assistant settings: %{errors}", errors: Enum.join(messages, "; "))
+  end
+
+  defp key_source_label(:environment), do: gettext("from the environment")
+  defp key_source_label(:database), do: gettext("stored encrypted in the database")
+  defp key_source_label(_), do: gettext("not set")
 
   defp read_upload(socket, key) do
     case consume_uploaded_entries(socket, key, fn %{path: path}, _entry ->

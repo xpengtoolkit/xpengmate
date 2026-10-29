@@ -1,0 +1,187 @@
+<nav class="breadcrumb" aria-label="breadcrumbs">
+  <ul>
+    <li><.link navigate={~p"/"}>{gettext("Home")}</.link></li>
+    <li class="is-active"><.link navigate={~p"/ask"}>{gettext("Ask")}</.link></li>
+  </ul>
+</nav>
+
+<h1 class="title is-3">{gettext("Ask")}</h1>
+<p class="subtitle is-6">
+  {gettext(
+    "Ask questions about your own trips, charging, tyres and battery. An AI model reads your data and answers."
+  )}
+</p>
+
+<%!-- Permanent, non-dismissible: this is the page's only consent surface. --%>
+<div class="notification is-warning is-light" id="ask-warning">
+  <p class="has-text-weight-semibold">
+    <span class="icon"><i class="mdi mdi-alert"></i></span>
+    {gettext("Your data leaves this server")}
+  </p>
+  <p>
+    {gettext(
+      "To generate an answer, summaries of your drives, charging sessions, tyre/setup records and battery readings are sent to DeepSeek."
+    )}
+    {gettext(
+      "The model can be wrong, so treat an answer as a hint, not as a fact: the assistant is read-only and cannot change your data or the car."
+    )}
+  </p>
+</div>
+
+<div class="level is-mobile mb-4">
+  <div class="level-left">
+    <div class="level-item">
+      <p class="help" id="ask-usage">
+        {gettext("%{used} of %{limit} questions used today",
+          used: @used,
+          limit: @daily_limit
+        )}
+      </p>
+    </div>
+    <%= if @configured and @model do %>
+      <div class="level-item">
+        <span class="tag is-light" id="ask-model">{@model}</span>
+      </div>
+    <% end %>
+  </div>
+  <div class="level-right">
+    <div class="level-item">
+      <button
+        id="clear-conversation"
+        type="button"
+        class="button is-small is-light"
+        phx-click="clear"
+        disabled={@running}
+      >
+        <span class="icon is-small"><i class="mdi mdi-broom"></i></span>
+        <span>{gettext("Clear conversation")}</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<%= if not @enabled do %>
+  <div class="notification is-warning is-light" id="ask-disabled">
+    <p class="has-text-weight-semibold">{gettext("Ask is switched off")}</p>
+    <p>
+      {gettext(
+        "The assistant is disabled. Enable it on the XpengMate page to start asking questions."
+      )}
+    </p>
+  </div>
+<% end %>
+
+<%= if @enabled and not @configured do %>
+  <div class="notification is-warning is-light" id="ask-not-configured">
+    <p class="has-text-weight-semibold">{gettext("No API key configured")}</p>
+    <p>{gettext("Add a DeepSeek API key on the XpengMate page to use Ask.")}</p>
+    <p class="mt-2">
+      <.link navigate={~p"/xpengmate"} class="button is-small is-info is-light">
+        <span class="icon is-small"><i class="mdi mdi-key-outline"></i></span>
+        <span>{gettext("Open XpengMate settings")}</span>
+      </.link>
+    </p>
+  </div>
+<% end %>
+
+<%= if @enabled and @configured and @used >= @daily_limit do %>
+  <div class="notification is-warning is-light" id="ask-daily-limit">
+    <p class="has-text-weight-semibold">{gettext("Daily limit reached")}</p>
+    <p>
+      {gettext(
+        "You have used all %{limit} questions for today. The limit resets at midnight (UTC).",
+        limit: @daily_limit
+      )}
+    </p>
+  </div>
+<% end %>
+
+<div class="buttons are-small mb-4" id="ask-suggestions">
+  <button
+    :for={suggestion <- @suggestions}
+    type="button"
+    class="button is-small is-light"
+    phx-click="suggestion"
+    phx-value-question={suggestion}
+    disabled={@blocked}
+  >
+    {suggestion}
+  </button>
+</div>
+
+<div id="conversation" class="mb-5">
+  <%= for turn <- @turns do %>
+    <%= if turn.role == :user do %>
+      <div class="box has-background-light agent-user">
+        <p class="is-size-7 has-text-grey has-text-weight-semibold">{gettext("You")}</p>
+        <p style="white-space: pre-wrap;">{turn.content}</p>
+      </div>
+    <% else %>
+      <div class="box agent-answer">
+        <p class="is-size-7 has-text-grey has-text-weight-semibold">
+          {if @model, do: @model, else: gettext("Assistant")}
+        </p>
+        <%= if turn.content do %>
+          <div class="content">
+            {TeslaMateWeb.AgentMarkdown.render(turn.content)}
+          </div>
+        <% end %>
+        <%= if turn.error do %>
+          <div class="notification is-danger is-light mt-2">{turn.error}</div>
+        <% end %>
+        <%= for chart <- turn.charts do %>
+          <div class="agent-chart mt-3">
+            <p class="has-text-weight-semibold is-size-7">{chart.title}</p>
+            <div class="chart">{raw(chart.svg)}</div>
+          </div>
+        <% end %>
+        <%= if turn.tools != [] do %>
+          <div class="mt-3">
+            <p
+              :for={summary <- turn.tools}
+              class="is-size-7 has-text-grey mb-1 agent-tool"
+            >
+              <span class="icon is-small"><i class="mdi mdi-check"></i></span>
+              <span>{gettext("checked:")} {summary}</span>
+            </p>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+  <% end %>
+</div>
+
+<%= if @running do %>
+  <div class="notification is-info is-light py-2" id="ask-progress">
+    <span class="icon is-small"><i class="mdi mdi-progress-clock"></i></span>
+    <span>{@progress || gettext("Thinking…")}</span>
+  </div>
+<% end %>
+
+<form id="ask-form" phx-change="update_question" phx-submit="ask">
+  <div class="field">
+    <div class="control">
+      <textarea
+        id="ask-question"
+        name="content"
+        class="textarea"
+        rows="3"
+        maxlength="1000"
+        placeholder={gettext("Ask about your trips, charging, tyres or battery…")}
+        disabled={@blocked}
+      >{@question}</textarea>
+    </div>
+    <%= if @composer_error do %>
+      <p class="help is-danger" id="ask-error">{@composer_error}</p>
+    <% end %>
+    <p class="help">
+      {gettext(
+        "Up to 1,000 characters. Answers are generated from your own data and are not stored by the server."
+      )}
+    </p>
+  </div>
+  <button id="ask-submit" class="button is-primary" type="submit" disabled={@blocked}>
+    <span class="icon"><i class="mdi mdi-send"></i></span>
+    <span>{gettext("Ask")}</span>
+  </button>
+</form>

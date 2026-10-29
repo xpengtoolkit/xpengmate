@@ -58,7 +58,10 @@
                       <th>{gettext("Car state")}</th>
                       <td>
                         <%= if engine["soc"] do %>
-                          {gettext("%{soc}% · %{km} km", soc: engine["soc"], km: engine["odometer_km"])}
+                          {gettext("%{soc}% · %{km} km",
+                            soc: engine["soc"],
+                            km: engine["odometer_km"]
+                          )}
                         <% else %>
                           <span class="has-text-grey">{gettext("via upstream provider")}</span>
                         <% end %>
@@ -90,7 +93,9 @@
                         <th>{gettext("Reachable")}</th>
                         <td>
                           <%= if engine["upstream"]["ok"] do %>
-                            <span class="has-text-success has-text-weight-semibold">{gettext("yes")}</span>
+                            <span class="has-text-success has-text-weight-semibold">{gettext(
+                              "yes"
+                            )}</span>
                           <% else %>
                             <span class="has-text-danger has-text-weight-semibold">{gettext("no")}</span>
                           <% end %>
@@ -117,12 +122,16 @@
                 <% end %>
               </div>
             </div>
-
         <% end %>
 
         <hr />
 
-        <.form for={@source_form} id="source-form" phx-change="validate_source" phx-submit="save_source">
+        <.form
+          for={@source_form}
+          id="source-form"
+          phx-change="validate_source"
+          phx-submit="save_source"
+        >
           <div class="columns">
             <div class="column">
               <div class="field">
@@ -130,7 +139,10 @@
                 <div class="control">
                   <div class="select is-fullwidth">
                     <select name="source[source]">
-                      <option value="provider" selected={@source_form.params["source"] == "provider"}>
+                      <option
+                        value="provider"
+                        selected={@source_form.params["source"] == "provider"}
+                      >
                         {gettext("Home Assistant provider (xpengtoolkit 0.6.16+) — recommended")}
                       </option>
                       <option value="ha" selected={@source_form.params["source"] == "ha"}>
@@ -152,10 +164,16 @@
                     <input
                       class="input"
                       type="text"
-                      name={if @source_form.params["source"] == "provider", do: "source[provider_url]", else: "source[ha_url]"}
-                      value={if @source_form.params["source"] == "provider",
-                        do: @source_form.params["provider_url"],
-                        else: @source_form.params["ha_url"]}
+                      name={
+                        if @source_form.params["source"] == "provider",
+                          do: "source[provider_url]",
+                          else: "source[ha_url]"
+                      }
+                      value={
+                        if @source_form.params["source"] == "provider",
+                          do: @source_form.params["provider_url"],
+                          else: @source_form.params["ha_url"]
+                      }
                       placeholder="http://"
                     />
                   </div>
@@ -166,11 +184,19 @@
                       do: gettext("Provider token"),
                       else: gettext("Home Assistant long-lived token")}
                   </label>
-                  <div class="control" id={"source-token-wrap-" <> (@source_form.params["source"] || "provider")} phx-update="ignore">
+                  <div
+                    class="control"
+                    id={"source-token-wrap-" <> (@source_form.params["source"] || "provider")}
+                    phx-update="ignore"
+                  >
                     <input
                       class="input"
                       type="password"
-                      name={if @source_form.params["source"] == "provider", do: "source[provider_token]", else: "source[ha_token]"}
+                      name={
+                        if @source_form.params["source"] == "provider",
+                          do: "source[provider_token]",
+                          else: "source[ha_token]"
+                      }
                       value=""
                       placeholder={gettext("leave empty to keep the saved token")}
                       autocomplete="off"
@@ -181,7 +207,12 @@
                   <div class="field">
                     <label class="label">{gettext("Entity prefix (e.g. xpeng_800783)")}</label>
                     <div class="control">
-                      <input class="input" type="text" name="source[ha_entity_prefix]" value={@source_form.params["ha_entity_prefix"]} />
+                      <input
+                        class="input"
+                        type="text"
+                        name="source[ha_entity_prefix]"
+                        value={@source_form.params["ha_entity_prefix"]}
+                      />
                     </div>
                   </div>
                 <% end %>
@@ -198,13 +229,23 @@
               <div class="field">
                 <label class="label">{gettext("VIN")}</label>
                 <div class="control">
-                  <input class="input" type="text" name="source[vin]" value={@source_form.params["vin"]} />
+                  <input
+                    class="input"
+                    type="text"
+                    name="source[vin]"
+                    value={@source_form.params["vin"]}
+                  />
                 </div>
               </div>
               <div class="field">
                 <label class="label">{gettext("Usable battery capacity (kWh)")}</label>
                 <div class="control">
-                  <input class="input" type="text" name="source[usable_battery_kwh]" value={@source_form.params["usable_battery_kwh"]} />
+                  <input
+                    class="input"
+                    type="text"
+                    name="source[usable_battery_kwh]"
+                    value={@source_form.params["usable_battery_kwh"]}
+                  />
                 </div>
                 <p class="help">
                   {gettext("Only used to estimate live charge energy; XPENG does not publish it.")}
@@ -259,14 +300,18 @@
                       <th>{gettext("Source")}</th>
                       <td>
                         <%= if history["configured"] do %>
-                          <span class="has-text-success has-text-weight-semibold">{history["config"]["mode"]}</span>
+                          <span class="has-text-success has-text-weight-semibold">{history[
+                            "config"
+                          ]["mode"]}</span>
                           <%= if history["config"]["mode"] == "supabase" do %>
                             <code>{history["config"]["supabase_url"]}</code>
                           <% else %>
                             <code>{history["config"]["api_url"]}</code>
                           <% end %>
                         <% else %>
-                          <span class="has-text-warning has-text-weight-semibold">{gettext("not configured")}</span>
+                          <span class="has-text-warning has-text-weight-semibold">{gettext(
+                            "not configured"
+                          )}</span>
                         <% end %>
                       </td>
                     </tr>
@@ -287,7 +332,9 @@
                           <%= if history["last_run"]["ok"] do %>
                             <span class="has-text-success has-text-weight-semibold">{gettext("ok")}</span>
                           <% else %>
-                            <span class="has-text-danger has-text-weight-semibold">{gettext("failed")}</span>
+                            <span class="has-text-danger has-text-weight-semibold">{gettext(
+                              "failed"
+                            )}</span>
                           <% end %>
                           {history["last_run"]["finished_at"]}
                         </td>
@@ -332,7 +379,9 @@
                       <% row = info[key] || %{} %>
                       <tr>
                         <td>{label}</td>
-                        <td class="has-text-right">{(history["database"] || %{})["counts"][key] || 0}</td>
+                        <td class="has-text-right">
+                          {(history["database"] || %{})["counts"][key] || 0}
+                        </td>
                         <td>{age_text(row["age_hours"])}</td>
                       </tr>
                     <% end %>
@@ -355,7 +404,12 @@
 
         <hr />
 
-        <.form for={@history_form} id="history-form" phx-change="validate_history" phx-submit="save_history">
+        <.form
+          for={@history_form}
+          id="history-form"
+          phx-change="validate_history"
+          phx-submit="save_history"
+        >
           <div class="columns">
             <div class="column is-4">
               <div class="field">
@@ -366,7 +420,10 @@
                       <option value="api" selected={@history_form.params["mode"] == "api"}>
                         {gettext("EVConduit API key (normal account — full history)")}
                       </option>
-                      <option value="supabase" selected={@history_form.params["mode"] == "supabase"}>
+                      <option
+                        value="supabase"
+                        selected={@history_form.params["mode"] == "supabase"}
+                      >
                         {gettext("EVConduit database (self-hosted operator only — full history)")}
                       </option>
                     </select>
@@ -376,7 +433,12 @@
               <div class="field">
                 <label class="label">{gettext("VIN")}</label>
                 <div class="control">
-                  <input class="input" type="text" name="history[vin]" value={@history_form.params["vin"]} />
+                  <input
+                    class="input"
+                    type="text"
+                    name="history[vin]"
+                    value={@history_form.params["vin"]}
+                  />
                 </div>
               </div>
               <p class="help">
@@ -391,32 +453,62 @@
                 <div class="field">
                   <label class="label">{gettext("xpengcardata API key")}</label>
                   <div class="control" id="history-api-key-wrap" phx-update="ignore">
-                    <input class="input" type="password" name="history[api_key]" value="" placeholder={gettext("leave empty to keep the saved key")} autocomplete="off" />
+                    <input
+                      class="input"
+                      type="password"
+                      name="history[api_key]"
+                      value=""
+                      placeholder={gettext("leave empty to keep the saved key")}
+                      autocomplete="off"
+                    />
                   </div>
                   <p class="help">
-                    {gettext("Your EVConduit API key. The versioned data API (/api/v1/xpeng) is cursor-paged, so this imports the account's full history: trips, charging sessions, GPS positions, tyre pressures, charge curves and online/asleep spans.")}
+                    {gettext(
+                      "Your EVConduit API key. The versioned data API (/api/v1/xpeng) is cursor-paged, so this imports the account's full history: trips, charging sessions, GPS positions, tyre pressures, charge curves and online/asleep spans."
+                    )}
                   </p>
                 </div>
                 <div class="field">
                   <label class="label">{gettext("API base URL")}</label>
                   <div class="control">
-                    <input class="input" type="text" name="history[api_url]" value={@history_form.params["api_url"]} placeholder="https://evconduit.com" />
+                    <input
+                      class="input"
+                      type="text"
+                      name="history[api_url]"
+                      value={@history_form.params["api_url"]}
+                      placeholder="https://evconduit.com"
+                    />
                   </div>
                 </div>
               <% else %>
                 <div class="field">
                   <label class="label">{gettext("Supabase URL")}</label>
                   <div class="control">
-                    <input class="input" type="text" name="history[supabase_url]" value={@history_form.params["supabase_url"]} placeholder="https://<project>.supabase.co" />
+                    <input
+                      class="input"
+                      type="text"
+                      name="history[supabase_url]"
+                      value={@history_form.params["supabase_url"]}
+                      placeholder="https://<project>.supabase.co"
+                    />
                   </div>
                 </div>
                 <div class="field">
                   <label class="label">{gettext("Supabase service-role key")}</label>
                   <div class="control" id="history-service-key-wrap" phx-update="ignore">
-                    <input class="input" type="password" name="history[service_key]" value="" placeholder={gettext("leave empty to keep the saved key")} autocomplete="off" />
+                    <input
+                      class="input"
+                      type="password"
+                      name="history[service_key]"
+                      value=""
+                      placeholder={gettext("leave empty to keep the saved key")}
+                      autocomplete="off"
+                    />
                   </div>
                   <p class="help">
-                    {gettext("Read-only use from this server only. It bypasses row-level security, so treat it as a password.")}
+                    {gettext(
+                      "Read-only use from this server only. It bypasses row-level security, so treat it as a password."
+                    )}
                   </p>
                 </div>
               <% end %>
@@ -425,10 +517,18 @@
                   <div class="field">
                     <label class="label is-small">{gettext("Export zip directory")}</label>
                     <div class="control">
-                      <input class="input is-small" type="text" name="history[export_zip]" value={@history_form.params["export_zip"]} placeholder="/data/exports" />
+                      <input
+                        class="input is-small"
+                        type="text"
+                        name="history[export_zip]"
+                        value={@history_form.params["export_zip"]}
+                        placeholder="/data/exports"
+                      />
                     </div>
                     <p class="help">
-                      {gettext("Optional: XPENG export zips joined onto positions for SoC, odometer and range.")}
+                      {gettext(
+                        "Optional: XPENG export zips joined onto positions for SoC, odometer and range."
+                      )}
                     </p>
                   </div>
                 </div>
@@ -436,13 +536,23 @@
                   <div class="field">
                     <label class="label is-small">{gettext("Usable battery (kWh)")}</label>
                     <div class="control">
-                      <input class="input is-small" type="text" name="history[usable_battery_kwh]" value={@history_form.params["usable_battery_kwh"]} />
+                      <input
+                        class="input is-small"
+                        type="text"
+                        name="history[usable_battery_kwh]"
+                        value={@history_form.params["usable_battery_kwh"]}
+                      />
                     </div>
                   </div>
                   <div class="field">
                     <label class="label is-small">{gettext("Car name")}</label>
                     <div class="control">
-                      <input class="input is-small" type="text" name="history[car_name]" value={@history_form.params["car_name"]} />
+                      <input
+                        class="input is-small"
+                        type="text"
+                        name="history[car_name]"
+                        value={@history_form.params["car_name"]}
+                      />
                     </div>
                   </div>
                 </div>
@@ -492,16 +602,23 @@
               <% summary = run["summary"] || %{} %>
               <div class={"notification is-light " <> (if run["ok"], do: "is-success", else: "is-danger")}>
                 <p class="has-text-weight-semibold">
-                  {if run["ok"], do: gettext("Last import finished"), else: gettext("Last import failed")}
+                  {if run["ok"],
+                    do: gettext("Last import finished"),
+                    else: gettext("Last import failed")}
                   <span class="is-size-7 has-text-grey">{run["finished_at"]}</span>
                 </p>
                 <%= if summary != %{} do %>
                   <div class="content is-small">
                     <ul>
-                      <li>{gettext("New files imported: %{n}", n: summary["files_imported"] || 0)}</li>
-                      <li>{gettext("Duplicate uploads skipped: %{n}", n: summary["duplicates"] || 0)}</li>
                       <li>
-                        {gettext("Drives: %{added} added, %{merged} extended, %{skipped} already covered",
+                        {gettext("New files imported: %{n}", n: summary["files_imported"] || 0)}
+                      </li>
+                      <li>
+                        {gettext("Duplicate uploads skipped: %{n}", n: summary["duplicates"] || 0)}
+                      </li>
+                      <li>
+                        {gettext(
+                          "Drives: %{added} added, %{merged} extended, %{skipped} already covered",
                           added: summary["added_drives"] || 0,
                           merged: summary["merged_drives"] || 0,
                           skipped: summary["skipped_drives"] || 0
@@ -514,11 +631,17 @@
                         )}
                       </li>
                       <li>{gettext("States added: %{n}", n: summary["added_states"] || 0)}</li>
-                      <li>{gettext("Positions enriched: %{n}", n: summary["enriched_positions"] || 0)}</li>
+                      <li>
+                        {gettext("Positions enriched: %{n}",
+                          n: summary["enriched_positions"] || 0
+                        )}
+                      </li>
                     </ul>
                     <%= if (summary["added_drives"] || 0) + (summary["added_charges"] || 0) + (summary["added_states"] || 0) == 0 do %>
                       <p class="has-text-grey">
-                        {gettext("No new rows were needed: everything in these files is already in the database.")}
+                        {gettext(
+                          "No new rows were needed: everything in these files is already in the database."
+                        )}
                       </p>
                     <% end %>
                   </div>
@@ -541,7 +664,11 @@
               method="post"
               enctype="multipart/form-data"
             >
-              <input type="hidden" name="_csrf_token" value={Plug.CSRFProtection.get_csrf_token()} />
+              <input
+                type="hidden"
+                name="_csrf_token"
+                value={Plug.CSRFProtection.get_csrf_token()}
+              />
               <div class="field">
                 <label class="label is-small" for="export-zips">{gettext("Export zips")}</label>
                 <div class="control">
@@ -558,7 +685,9 @@
                   />
                 </div>
                 <p class="help">
-                  {gettext("Up to 12 files at once; each is stored on the history service and imported once.")}
+                  {gettext(
+                    "Up to 12 files at once; each is stored on the history service and imported once."
+                  )}
                 </p>
                 <p id="export-selection" class="has-text-info is-size-7"></p>
               </div>
@@ -631,6 +760,167 @@
                 </tbody>
               </table>
             <% end %>
+        <% end %>
+      </div>
+    </div>
+    <%!-- ===================== AI ASSISTANT ===================== --%>
+    <div class="card mb-5">
+      <header class="card-header">
+        <p class="card-header-title">
+          <span class="icon mr-2"><i class="mdi mdi-robot-outline"></i></span>
+          {gettext("AI assistant (Ask)")}
+        </p>
+      </header>
+      <div class="card-content">
+        <p class="help mb-3">
+          {gettext(
+            "The Ask page answers questions about your own data with an AI model. Summaries of your drives, charging, tyres and battery are sent to the provider to produce each answer. The assistant is read-only, and every question is counted against a daily cap because each one costs money."
+          )}
+        </p>
+
+        <%= if @agent do %>
+          <table class="table is-narrow is-fullwidth">
+            <tbody>
+              <tr>
+                <th>{gettext("API key")}</th>
+                <td>
+                  <%= if @agent.configured do %>
+                    <span class="has-text-success has-text-weight-semibold">{gettext("set")}</span>
+                    <span class="has-text-grey">· {key_source_label(@agent.key_source)}</span>
+                  <% else %>
+                    <span class="has-text-warning has-text-weight-semibold">{gettext("not set")}</span>
+                  <% end %>
+                </td>
+              </tr>
+              <tr>
+                <th>{gettext("Assistant")}</th>
+                <td>
+                  <%= if @agent.enabled do %>
+                    <span class="tag is-success is-light">{gettext("enabled")}</span>
+                  <% else %>
+                    <span class="tag is-light">{gettext("switched off")}</span>
+                  <% end %>
+                </td>
+              </tr>
+              <tr>
+                <th>{gettext("Model")}</th>
+                <td><code>{@agent.model}</code></td>
+              </tr>
+              <tr>
+                <th>{gettext("Questions today")}</th>
+                <td>
+                  {@agent.used} / {@agent.daily_limit}
+                  <%= if @agent.daily_limit_reached do %>
+                    <span class="tag is-warning is-light ml-2">{gettext("limit reached")}</span>
+                  <% end %>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        <% else %>
+          <p class="has-text-grey">{gettext("Loading assistant status…")}</p>
+        <% end %>
+
+        <.form
+          for={@agent_form}
+          id="agent-form"
+          phx-change="validate_agent"
+          phx-submit="save_agent"
+        >
+          <div class="field">
+            <label class="label is-small" for="agent_api_key">{gettext("API key")}</label>
+            <div class="control">
+              <input
+                class="input"
+                type="password"
+                id="agent_api_key"
+                name="agent[api_key]"
+                value=""
+                autocomplete="off"
+                placeholder={gettext("leave empty to keep the stored key")}
+              />
+            </div>
+            <p class="help">
+              {gettext(
+                "Stored encrypted with the same key as your Tesla tokens and never shown again. A key in the environment overrides this one."
+              )}
+            </p>
+          </div>
+
+          <div class="field is-grouped">
+            <div class="control is-expanded">
+              <label class="label is-small" for="agent_model">{gettext("Model")}</label>
+              <input
+                class="input"
+                type="text"
+                id="agent_model"
+                name="agent[model]"
+                value={@agent_form.params["model"]}
+              />
+            </div>
+            <div class="control is-expanded">
+              <label class="label is-small" for="agent_base_url">{gettext("Base URL")}</label>
+              <input
+                class="input"
+                type="text"
+                id="agent_base_url"
+                name="agent[base_url]"
+                value={@agent_form.params["base_url"]}
+              />
+            </div>
+            <div class="control">
+              <label class="label is-small" for="agent_daily_limit">{gettext("Questions per day")}</label>
+              <input
+                class="input"
+                type="number"
+                min="1"
+                max="1000"
+                id="agent_daily_limit"
+                name="agent[daily_limit]"
+                value={@agent_form.params["daily_limit"]}
+              />
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="checkbox">
+              <input
+                type="checkbox"
+                name="agent[enabled]"
+                value="true"
+                checked={@agent_form.params["enabled"] == "true"}
+              />
+              {gettext("Enable the Ask page")}
+            </label>
+          </div>
+
+          <div class="field">
+            <div class="buttons">
+              <button class="button is-primary" type="submit">{gettext("Save")}</button>
+              <button class="button is-light" type="button" phx-click="test_agent">
+                {gettext("Test connection")}
+              </button>
+              <button
+                class="button is-danger is-light"
+                type="button"
+                phx-click="clear_agent_key"
+                data-confirm={gettext("Remove the stored API key?")}
+              >
+                {gettext("Remove key")}
+              </button>
+              <a href="/ask" class="button is-text">{gettext("Open Ask")}</a>
+            </div>
+          </div>
+        </.form>
+
+        <%= case @agent_test do %>
+          <% nil -> %>
+          <% :ok -> %>
+            <div class="notification is-success is-light">
+              {gettext("The provider accepted the key.")}
+            </div>
+          <% {:error, message} -> %>
+            <div class="notification is-danger is-light">{message}</div>
         <% end %>
       </div>
     </div>

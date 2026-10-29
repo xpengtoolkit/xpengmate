@@ -21,11 +21,37 @@
   "links": [],
   "panels": [
     {
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 2,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 3,
+      "options": {
+        "code": {
+          "language": "plaintext",
+          "showLineNumbers": false,
+          "showMiniMap": false
+        },
+        "content": "<div style=\"display:flex;flex-wrap:wrap;gap:10px;align-items:center;font-family:Inter,Helvetica,Arial,sans-serif;padding:2px 2px 0 2px;\"><span style=\"font-size:13px;color:#93a4b2;margin-right:2px;\">Open the app:</span><a href=\"${base_url}/setups\" target=\"_blank\" rel=\"noopener\" style=\"display:inline-block;padding:8px 16px;border-radius:8px;font-weight:600;font-size:14px;text-decoration:none;background:#4cd7c4;color:#06231f;\">Setups</a><a href=\"${base_url}/xpengmate\" target=\"_blank\" rel=\"noopener\" style=\"display:inline-block;padding:8px 16px;border-radius:8px;font-weight:600;font-size:14px;text-decoration:none;border:1px solid #3a4a56;color:#dbe7ee;background:rgba(8,14,22,0.45);\">XpengMate settings</a><a href=\"${base_url}/settings\" target=\"_blank\" rel=\"noopener\" style=\"display:inline-block;padding:8px 16px;border-radius:8px;font-weight:600;font-size:14px;text-decoration:none;border:1px solid #3a4a56;color:#dbe7ee;background:rgba(8,14,22,0.45);\">Settings</a><a href=\"${base_url}/import\" target=\"_blank\" rel=\"noopener\" style=\"display:inline-block;padding:8px 16px;border-radius:8px;font-weight:600;font-size:14px;text-decoration:none;border:1px solid #3a4a56;color:#dbe7ee;background:rgba(8,14,22,0.45);\">Import</a></div>",
+        "mode": "html"
+      },
+      "pluginVersion": "13.2.3",
+      "title": "",
+      "type": "text"
+    },
+    {
       "gridPos": {
         "h": 20,
         "w": 6,
         "x": 0,
-        "y": 0
+        "y": 2
       },
       "id": 2,
       "options": {
@@ -54,7 +80,7 @@
         "h": 20,
         "w": 18,
         "x": 6,
-        "y": 0
+        "y": 2
       },
       "id": 1,
       "options": {
@@ -75,7 +101,25 @@
   "schemaVersion": 42,
   "tags": [],
   "templating": {
-    "list": []
+    "list": [
+      {
+        "current": {},
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "TeslaMate"
+        },
+        "definition": "select base_url from settings limit 1;",
+        "hide": 2,
+        "includeAll": false,
+        "name": "base_url",
+        "options": [],
+        "query": "select base_url from settings limit 1;",
+        "refresh": 1,
+        "regex": "",
+        "regexApplyTo": "value",
+        "type": "query"
+      }
+    ]
   },
   "time": {
     "from": "now-6h",

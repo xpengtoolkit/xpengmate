@@ -29,6 +29,7 @@ defmodule TeslaMate.Application do
           TeslaMate.Updater,
           {Phoenix.PubSub, name: TeslaMate.PubSub},
           TeslaMateWeb.Endpoint,
+          {Task.Supervisor, name: TeslaMate.TaskSupervisor},
           TeslaMate.Terrain,
           TeslaMate.Vehicles,
           if(mqtt_config != nil, do: {TeslaMate.Mqtt, mqtt_config}),
@@ -45,6 +46,7 @@ defmodule TeslaMate.Application do
           TeslaMate.Updater,
           {Phoenix.PubSub, name: TeslaMate.PubSub},
           TeslaMateWeb.Endpoint,
+          {Task.Supervisor, name: TeslaMate.TaskSupervisor},
           {TeslaMate.Terrain, disabled: true},
           {TeslaMate.Repair, limit: 250},
           {TeslaMate.Import, directory: import_directory}

@@ -38,6 +38,14 @@ services:
       - TESLA_AUTH_HOST=http://engine:8201
       - TESLA_AUTH_PATH=/oauth2/v3
       - TESLA_WSS_HOST=ws://engine:8201
+      # The Ask assistant is configured on /xpengmate; these are the optional
+      # environment overrides (see .env.example). Unset means "use the stored
+      # settings", so an empty variable must not be passed through as "".
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-}
+      - DEEPSEEK_BASE_URL=${DEEPSEEK_BASE_URL:-}
+      - DEEPSEEK_MODEL=${DEEPSEEK_MODEL:-}
+      - XPENGMATE_AGENT_MAX_TOKENS=${XPENGMATE_AGENT_MAX_TOKENS:-}
+      - XPENGMATE_AGENT_TIMEOUT_SECONDS=${XPENGMATE_AGENT_TIMEOUT_SECONDS:-}
     ports:
       - "${XPENGMATE_PORT:-4100}:4000"
     volumes:
