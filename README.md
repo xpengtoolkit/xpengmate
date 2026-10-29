@@ -31,12 +31,21 @@ Nothing about the car is invented: a field XPENG does not report is stored as
   XPENG platform exposes (MQTT telemetry through the provider).
 * **Historical import** of drives, charges, GPS traces and states (EVConduit),
   or of drives/charges/tyres/states from XPENG's export zips.
-* **TeslaMate's dashboards**, rebranded and 24 provisioned: Overview, Drives,
-  Drive Stats, Charges, Charging Stats, Battery Health, Efficiency, Locations,
-  Mileage, States, Timeline, Database Information and the reports folders.
+* **TeslaMate's dashboards**, rebranded and 25 provisioned: Overview, Drives,
+  Drive Stats, Charges, Charging Stats, Battery Health, Efficiency, Setups,
+  Locations, Mileage, States, Timeline, Database Information and the reports
+  folders.
 * **A settings page** at `/xpengmate` in the app for the live source, XPENG
   credentials, outside-temperature sensor, history credentials/sync and export
-  uploads — no SSH required for day-to-day changes.
+  uploads, plus a `/setups` page for the vehicle setup periods (tyres, towing,
+  roof rack, load) the Setups dashboard compares — no SSH required for
+  day-to-day changes.
+* **An Ask page** at `/ask` for plain-English questions about your own data
+  ("compare my consumption on the current tyres with the last set", "which
+  month was worst for parked drain?"). An AI model answers from tool results
+  computed over your database — never from its own recollection — and it is
+  read-only. Off until you add a provider key on `/xpengmate`; every question
+  counts against a daily cap.
 * **Home Assistant integration** via MQTT (same topics as TeslaMate) plus a
   branded app UI, logo and Grafana theme.
 * **EVConduit-optional**: the stack works with live data + export files alone;
@@ -175,6 +184,43 @@ engine (a few seconds).
   form, with feedback listing the selected files); the result reports new
   files, duplicates, added/extended/covered drives and charges, and explains
   when nothing new was needed.
+* **Vehicle setups** — the separate `/setups` page records the tyres fitted,
+  when a trailer was towed, when a roof box was on and when the car was loaded,
+  one row per aspect over an inclusive date range. The aspects are independent
+  and may overlap; drives are attributed by their local calendar day when read,
+  so correcting a range re-tags history. See [vehicle
+  setups](docs/ARCHITECTURE.md#vehicle-setups) for the rule.
+
+## Ask assistant
+
+`/ask` is a chat page over the car's own data. It is **off by default** and
+needs an API key, which you paste on `/xpengmate` — it is stored encrypted with
+the same `ENCRYPTION_KEY` as the Tesla tokens and is never shown again. The
+`DEEPSEEK_*` variables in `.env.example` are the alternative way to configure
+it, and an environment value overrides the stored one.
+
+The design is deliberately narrow:
+
+* the model never queries the database. One bounded snapshot (last 730 days,
+  at most 2000 drives and 1000 charging sessions) is loaded per question, and
+  every tool — totals, monthly series, consumption by tyre/towing/roof-rack/load
+  setup, charging, trips, parked drain, tyre pressures, battery estimate, data
+  coverage — is a pure function of that snapshot;
+* a question is answered in **at most four model turns and nine tool calls**,
+  which is the cost ceiling; if the fourth turn is still gathering data, one
+  final call with the tools removed forces the answer from what was already
+  read, so a tool-happy model ends with an answer rather than an apology. A
+  daily cap (default 60 questions) is enforced before the provider runs;
+* charts are not drawn by the model: it may name one of four charts from a
+  fixed catalogue, and the server computes the series and renders the SVG;
+* there is no write path at all — the assistant cannot change data, and the
+  prompt says so.
+
+**What leaves your server:** to answer, summaries of the drives, charges, tyre
+setups and battery readings in that snapshot are sent to the AI provider
+(DeepSeek by default, or any OpenAI-compatible endpoint via `DEEPSEEK_BASE_URL`).
+The page says so permanently, above the conversation. If that is not acceptable,
+leave the assistant off — nothing else in XpengMate depends on it.
 
 ## Native engine (unsupported / development only)
 
@@ -268,7 +314,7 @@ that sensor instead. No sensor configured → the provider's value is kept.
 
 TeslaMate's dashboards, rebranded and extended:
 
-* **24 provisioned dashboards** in folders `XpengMate`, `XpengMate Internal` and
+* **25 provisioned dashboards** in folders `XpengMate`, `XpengMate Internal` and
   `XpengMate Reports`; the datasource display name is `XpengMate` while its uid
   deliberately stays `TeslaMate` so every panel reference keeps working.
 * **Home** dashboard: the supplied XPENG line-up photo with the XpengMate
@@ -276,6 +322,12 @@ TeslaMate's dashboards, rebranded and extended:
   *"A fork of TeslaMate"* credit, beside the dashboard list.
 * **Energy** in kWh/100km: net = drive range delta × efficiency; gross = net ×
   the measured charging-loss factor (so gross is at or above net).
+* **Setups**: consumption compared between the recorded setup periods — tyres,
+  trailer, roof box, load — against the *Not recorded* baseline. A drive is
+  attributed to the newest setup of each aspect covering its local calendar
+  day, so the same drive can appear under tyres and under towing. A
+  current-setup stat and a consumption-over-time chart split by tyre label make
+  a change easy to see.
 * **Battery Health**: pack is *91 kWh gross / 87.5 kWh usable* (3.5 kWh buffer).
   "Usable (new)" is pinned to 87.5; "Usable (now)" is
   `Σ charge energy into pack ÷ Σ SOC increase` over recent sessions with a ≥5%

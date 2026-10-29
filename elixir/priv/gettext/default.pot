@@ -70,12 +70,16 @@ msgstr ""
 msgid "Sentry Mode"
 msgstr ""
 
+#: lib/teslamate_web/live/ask_live/index.html.heex:3
 #: lib/teslamate_web/live/car_live/index.ex:18
 #: lib/teslamate_web/live/charge_live/cost.html.heex:3
 #: lib/teslamate_web/live/geofence_live/form.html.heex:3
 #: lib/teslamate_web/live/geofence_live/index.html.heex:3
 #: lib/teslamate_web/live/import_live/index.html.heex:3
 #: lib/teslamate_web/live/settings_live/index.html.heex:3
+#: lib/teslamate_web/live/setups_live/form.html.heex:3
+#: lib/teslamate_web/live/setups_live/index.html.heex:3
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:3
 #, elixir-autogen, elixir-format
 msgid "Home"
 msgstr ""
@@ -83,7 +87,7 @@ msgstr ""
 #: lib/teslamate_web/live/car_live/index.html.heex:22
 #: lib/teslamate_web/live/settings_live/index.ex:24
 #: lib/teslamate_web/live/settings_live/index.html.heex:4
-#: lib/teslamate_web/templates/layout/root.html.heex:123
+#: lib/teslamate_web/templates/layout/root.html.heex:145
 #, elixir-autogen, elixir-format
 msgid "Settings"
 msgstr ""
@@ -128,8 +132,9 @@ msgstr ""
 msgid "Units"
 msgstr ""
 
-#: lib/teslamate_web/live/charge_live/cost.html.heex:168
+#: lib/teslamate_web/live/charge_live/cost.html.heex:177
 #: lib/teslamate_web/live/geofence_live/form.html.heex:143
+#: lib/teslamate_web/live/setups_live/form.html.heex:150
 #, elixir-autogen, elixir-format
 msgid "Back"
 msgstr ""
@@ -143,7 +148,7 @@ msgstr ""
 #: lib/teslamate_web/live/geofence_live/form.html.heex:4
 #: lib/teslamate_web/live/geofence_live/index.ex:22
 #: lib/teslamate_web/live/geofence_live/index.html.heex:5
-#: lib/teslamate_web/templates/layout/root.html.heex:115
+#: lib/teslamate_web/templates/layout/root.html.heex:137
 #, elixir-autogen, elixir-format
 msgid "Geo-Fences"
 msgstr ""
@@ -171,14 +176,17 @@ msgstr ""
 msgid "Radius"
 msgstr ""
 
-#: lib/teslamate_web/live/charge_live/cost.html.heex:172
+#: lib/teslamate_web/live/charge_live/cost.html.heex:181
 #: lib/teslamate_web/live/geofence_live/form.html.heex:147
+#: lib/teslamate_web/live/setups_live/form.html.heex:153
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:899
 #, elixir-autogen, elixir-format
 msgid "Save"
 msgstr ""
 
-#: lib/teslamate_web/live/charge_live/cost.html.heex:173
+#: lib/teslamate_web/live/charge_live/cost.html.heex:182
 #: lib/teslamate_web/live/geofence_live/form.html.heex:148
+#: lib/teslamate_web/live/setups_live/form.html.heex:154
 #: lib/teslamate_web/live/signin_live/index.html.heex:85
 #, elixir-autogen, elixir-format
 msgid "Saving..."
@@ -402,13 +410,13 @@ msgstr ""
 msgid "Charge Cost"
 msgstr ""
 
-#: lib/teslamate_web/live/charge_live/cost.html.heex:134
+#: lib/teslamate_web/live/charge_live/cost.html.heex:143
 #: lib/teslamate_web/live/geofence_live/form.html.heex:78
 #, elixir-autogen, elixir-format
 msgid "Cost"
 msgstr ""
 
-#: lib/teslamate_web/live/charge_live/cost.html.heex:153
+#: lib/teslamate_web/live/charge_live/cost.html.heex:162
 #, elixir-autogen, elixir-format
 msgid "Enter charge cost"
 msgstr ""
@@ -492,13 +500,13 @@ msgstr ""
 msgid "Doors open"
 msgstr ""
 
-#: lib/teslamate_web/live/charge_live/cost.html.heex:142
+#: lib/teslamate_web/live/charge_live/cost.html.heex:151
 #: lib/teslamate_web/live/geofence_live/form.html.heex:86
 #, elixir-autogen, elixir-format
 msgid "Per kWh"
 msgstr ""
 
-#: lib/teslamate_web/live/charge_live/cost.html.heex:141
+#: lib/teslamate_web/live/charge_live/cost.html.heex:150
 #, elixir-autogen, elixir-format
 msgid "Total"
 msgstr ""
@@ -546,7 +554,7 @@ msgid "GitHub"
 msgstr ""
 
 #: lib/teslamate_web/live/settings_live/index.html.heex:469
-#: lib/teslamate_web/templates/layout/root.html.heex:194
+#: lib/teslamate_web/templates/layout/root.html.heex:216
 #, elixir-autogen, elixir-format
 msgid "Update available"
 msgstr ""
@@ -561,7 +569,7 @@ msgstr ""
 msgid "Trunk is open"
 msgstr ""
 
-#: lib/teslamate_web/live/charge_live/cost.html.heex:143
+#: lib/teslamate_web/live/charge_live/cost.html.heex:152
 #: lib/teslamate_web/live/geofence_live/form.html.heex:87
 #, elixir-autogen, elixir-format
 msgid "Per Minute"
@@ -607,24 +615,19 @@ msgstr ""
 msgid "Downloading update"
 msgstr ""
 
-#: lib/teslamate_web/templates/layout/root.html.heex:151
+#: lib/teslamate_web/templates/layout/root.html.heex:173
 #, elixir-autogen, elixir-format
 msgid "No encryption key provided"
 msgstr ""
 
-#: lib/teslamate_web/templates/layout/root.html.heex:171
+#: lib/teslamate_web/templates/layout/root.html.heex:193
 #, elixir-autogen, elixir-format
 msgid "For more information, see the updated installation guides on %{link}"
 msgstr ""
 
-#: lib/teslamate_web/templates/layout/root.html.heex:164
+#: lib/teslamate_web/templates/layout/root.html.heex:186
 #, elixir-autogen, elixir-format
 msgid "The automatically generated encryption key used for the current session can be found <strong>in the application logs</strong>."
-msgstr ""
-
-#: lib/teslamate_web/templates/layout/root.html.heex:157
-#, elixir-autogen, elixir-format
-msgid "To ensure that your <strong>Tesla API tokens are stored securely</strong>, an encryption key must be provided to TeslaMate via the <code>ENCRYPTION_KEY</code> environment variable. Otherwise, a <strong>login will be required after every restart</strong>."
 msgstr ""
 
 #: lib/teslamate_web/live/settings_live/index.html.heex:394
@@ -852,6 +855,7 @@ msgstr ""
 
 #: lib/teslamate_web/live/car_title.ex:17
 #: lib/teslamate_web/live/car_title.ex:22
+#: lib/teslamate_web/live/setups_live/form.ex:116
 #, elixir-autogen, elixir-format
 msgid "VIN %{vin}"
 msgstr ""
@@ -942,7 +946,7 @@ msgstr ""
 msgid "A vehicle could not be saved to the database. Please check the logs."
 msgstr ""
 
-#: lib/teslamate_web/templates/layout/root.html.heex:198
+#: lib/teslamate_web/templates/layout/root.html.heex:220
 #, elixir-autogen, elixir-format
 msgid "Free software under the AGPL-3.0-or-later, with ABSOLUTELY NO WARRANTY; you may redistribute it under its terms"
 msgstr ""
@@ -955,4 +959,1124 @@ msgstr ""
 #: lib/teslamate_web/live/signin_live/index.ex:75
 #, elixir-autogen, elixir-format
 msgid "Sign in failed, see the logs for details"
+msgstr ""
+
+#: lib/teslamate_web/live/setups_live/index.html.heex:223
+#, elixir-autogen, elixir-format
+msgid "\"Not recorded\" is the baseline: no setup of that aspect covered the drive. Distance and energy are TeslaMate's rated-range estimate, so consumption agrees with the Efficiency dashboard."
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.ex:500
+#, elixir-autogen, elixir-format
+msgid "%{days} days ago"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.ex:496
+#, elixir-autogen, elixir-format
+msgid "%{hours} h ago"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.ex:492
+#, elixir-autogen, elixir-format
+msgid "%{minutes} min ago"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:61
+#, elixir-autogen, elixir-format
+msgid "%{soc}% · %{km} km"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:445
+#, elixir-autogen, elixir-format
+msgid "A normal EVConduit account uses its API key (History → API in your EVConduit account). The database mode is only for someone who self-hosts EVConduit and holds its Supabase service-role key. Neither is needed if you only use live data plus XPENG export files."
+msgstr ""
+
+#: lib/teslamate_web/live/setups_live/form.html.heex:24
+#, elixir-autogen, elixir-format
+msgid "A setup is one aspect over an inclusive date range. Aspects are independent, so a tyre change and a roof box may overlap; a drive is attributed to the newest setup of each aspect that covers its date."
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:472
+#, elixir-autogen, elixir-format
+msgid "API base URL"
+msgstr ""
+
+#: lib/teslamate_web/live/setups_live/index.html.heex:20
+#, elixir-autogen, elixir-format
+msgid "Add setup"
+msgstr ""
+
+#: lib/teslamate_web/live/setups_live/form.html.heex:50
+#, elixir-autogen, elixir-format
+msgid "Aspect"
+msgstr ""
+
+#: lib/teslamate_web/live/setups_live/index.html.heex:191
+#, elixir-autogen, elixir-format
+msgid "Avg. outside temperature"
+msgstr ""
+
+#: lib/teslamate_web/live/setups_live/index.html.heex:193
+#, elixir-autogen, elixir-format
+msgid "Avg. speed"
+msgstr ""
+
+#: lib/teslamate_web/live/setups_live/form.html.heex:32
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:106
+#, elixir-autogen, elixir-format
+msgid "Car"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:548
+#, elixir-autogen, elixir-format
+msgid "Car name"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:58
+#, elixir-autogen, elixir-format
+msgid "Car state"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:374
+#, elixir-autogen, elixir-format
+msgid "Charge samples"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:745
+#, elixir-autogen, elixir-format
+msgid "Charges"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:628
+#, elixir-autogen, elixir-format
+msgid "Charges: %{added} added, %{skipped} already covered"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:373
+#, elixir-autogen, elixir-format
+msgid "Charging sessions"
+msgstr ""
+
+#: lib/teslamate_web/controllers/xpeng_mate_controller.ex:33
+#, elixir-autogen, elixir-format
+msgid "Choose at least one export zip first."
+msgstr ""
+
+#: lib/teslamate_web/live/setups_live/index.html.heex:189
+#, elixir-autogen, elixir-format
+msgid "Consumption"
+msgstr ""
+
+#: lib/teslamate_web/live/setups_live/index.html.heex:154
+#, elixir-autogen, elixir-format
+msgid "Consumption comparison"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.ex:199
+#, elixir-autogen, elixir-format
+msgid "Credentials installed. The engine is restarting with them."
+msgstr ""
+
+#: lib/teslamate_web/live/setups_live/index.ex:124
+#, elixir-autogen, elixir-format
+msgid "Current"
+msgstr ""
+
+#: lib/teslamate_web/live/setups_live/index.html.heex:130
+#, elixir-autogen, elixir-format
+msgid "Delete the setup \"%{label}\"?"
+msgstr ""
+
+#: lib/teslamate_web/live/setups_live/index.html.heex:188
+#, elixir-autogen, elixir-format
+msgid "Distance"
+msgstr ""
+
+#: lib/teslamate_web/live/setups_live/index.html.heex:57
+#: lib/teslamate_web/live/setups_live/index.html.heex:187
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:372
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:744
+#, elixir-autogen, elixir-format
+msgid "Drives"
+msgstr ""
+
+#: lib/teslamate_web/live/setups_live/index.html.heex:169
+#, elixir-autogen, elixir-format
+msgid "Drives are attributed by their local calendar day in %{timezone}."
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:620
+#, elixir-autogen, elixir-format
+msgid "Drives: %{added} added, %{merged} extended, %{skipped} already covered"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:617
+#, elixir-autogen, elixir-format
+msgid "Duplicate uploads skipped: %{n}"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:421
+#, elixir-autogen, elixir-format
+msgid "EVConduit API key (normal account — full history)"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:427
+#, elixir-autogen, elixir-format
+msgid "EVConduit database (self-hosted operator only — full history)"
+msgstr ""
+
+#: lib/teslamate_web/live/setups_live/form.ex:101
+#: lib/teslamate_web/live/setups_live/form.html.heex:19
+#, elixir-autogen, elixir-format
+msgid "Edit setup"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:42
+#, elixir-autogen, elixir-format
+msgid "Engine settings API unreachable: %{reason}"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:208
+#, elixir-autogen, elixir-format
+msgid "Entity prefix (e.g. xpeng_800783)"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.ex:210
+#, elixir-autogen, elixir-format
+msgid "Every file is required: %{keys}"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:597
+#, elixir-autogen, elixir-format
+msgid "Export status unavailable: %{reason}"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:518
+#, elixir-autogen, elixir-format
+msgid "Export zip directory"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:673
+#, elixir-autogen, elixir-format
+msgid "Export zips"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:741
+#, elixir-autogen, elixir-format
+msgid "File"
+msgstr ""
+
+#: lib/teslamate_web/live/setups_live/form.html.heex:96
+#: lib/teslamate_web/live/setups_live/index.html.heex:55
+#, elixir-autogen, elixir-format
+msgid "From"
+msgstr ""
+
+#: lib/teslamate_web/live/setups_live/index.html.heex:31
+#, elixir-autogen, elixir-format
+msgid "Go to the garage"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:283
+#, elixir-autogen, elixir-format
+msgid "History from EVConduit (xpengcardata)"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:292
+#, elixir-autogen, elixir-format
+msgid "History service unreachable: %{reason}"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.ex:250
+#, elixir-autogen, elixir-format
+msgid "History source saved."
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.ex:263
+#, elixir-autogen, elixir-format
+msgid "History sync started; this page refreshes itself."
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:161
+#, elixir-autogen, elixir-format
+msgid "Home Assistant URL (e.g. http://homeassistant.local:8123)"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.ex:510
+#, elixir-autogen, elixir-format
+msgid "Home Assistant entities (fallback)"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:149
+#, elixir-autogen, elixir-format
+msgid "Home Assistant entities (fallback, no provider option needed)"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:185
+#, elixir-autogen, elixir-format
+msgid "Home Assistant long-lived token"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.ex:509
+#, elixir-autogen, elixir-format
+msgid "Home Assistant provider (xpengtoolkit 0.6.16+)"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:146
+#, elixir-autogen, elixir-format
+msgid "Home Assistant provider (xpengtoolkit 0.6.16+) — recommended"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:416
+#, elixir-autogen, elixir-format
+msgid "How should history be pulled?"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:651
+#, elixir-autogen, elixir-format
+msgid "Import log"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:746
+#, elixir-autogen, elixir-format
+msgid "Imported"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:734
+#, elixir-autogen, elixir-format
+msgid "Imported export files"
+msgstr ""
+
+#: lib/teslamate_web/live/setups_live/form.html.heex:68
+#: lib/teslamate_web/live/setups_live/index.html.heex:54
+#, elixir-autogen, elixir-format
+msgid "Label"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:76
+#, elixir-autogen, elixir-format
+msgid "Last error"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:607
+#, elixir-autogen, elixir-format
+msgid "Last import failed"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:606
+#, elixir-autogen, elixir-format
+msgid "Last import finished"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:330
+#, elixir-autogen, elixir-format
+msgid "Last sync"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:399
+#, elixir-autogen, elixir-format
+msgid "Last sync log"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:116
+#, elixir-autogen, elixir-format
+msgid "Latency"
+msgstr ""
+
+#: lib/teslamate_web/live/setups_live/form.html.heex:120
+#, elixir-autogen, elixir-format
+msgid "Leave empty while it is still fitted."
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:33
+#, elixir-autogen, elixir-format
+msgid "Live data source"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:12
+#, elixir-autogen, elixir-format
+msgid "Live source, XPENG credentials, and the EVConduit history feed. Changes are applied by restarting the engine (a few seconds)."
+msgstr ""
+
+#: lib/teslamate_web/live/setups_live/form.ex:127
+#: lib/teslamate_web/live/setups_live/index.ex:118
+#, elixir-autogen, elixir-format
+msgid "Loaded"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:39
+#, elixir-autogen, elixir-format
+msgid "Loading engine status…"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:594
+#, elixir-autogen, elixir-format
+msgid "Loading export status…"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:289
+#, elixir-autogen, elixir-format
+msgid "Loading history status…"
+msgstr ""
+
+#: lib/teslamate_web/live/setups_live/form.html.heex:76
+#, elixir-autogen, elixir-format
+msgid "Michelin Pilot Sport 4 255/45R20"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:614
+#, elixir-autogen, elixir-format
+msgid "New files imported: %{n}"
+msgstr ""
+
+#: lib/teslamate_web/live/setups_live/form.ex:100
+#: lib/teslamate_web/live/setups_live/form.html.heex:8
+#: lib/teslamate_web/live/setups_live/form.html.heex:18
+#, elixir-autogen, elixir-format
+msgid "New setup"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:367
+#, elixir-autogen, elixir-format
+msgid "Newest"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:345
+#, elixir-autogen, elixir-format
+msgid "Newest data"
+msgstr ""
+
+#: lib/teslamate_web/live/charge_live/cost.html.heex:43
+#, elixir-autogen, elixir-format
+msgid "No GPS position was recorded for this charge, so there is no map."
+msgstr ""
+
+#: lib/teslamate_web/live/setups_live/index.html.heex:29
+#, elixir-autogen, elixir-format
+msgid "No cars yet. Add a car first, then record its setups."
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:642
+#, elixir-autogen, elixir-format
+msgid "No new rows were needed: everything in these files is already in the database."
+msgstr ""
+
+#: lib/teslamate_web/live/setups_live/index.html.heex:37
+#, elixir-autogen, elixir-format
+msgid "No setups recorded yet. Add one to compare consumption between tyres, towing, a roof rack or a load."
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:736
+#, elixir-autogen, elixir-format
+msgid "None yet."
+msgstr ""
+
+#: lib/teslamate_web/live/setups_live/index.html.heex:200
+#, elixir-autogen, elixir-format
+msgid "Not recorded"
+msgstr ""
+
+#: lib/teslamate_web/live/setups_live/form.html.heex:131
+#: lib/teslamate_web/live/setups_live/index.html.heex:58
+#, elixir-autogen, elixir-format
+msgid "Notes"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:251
+#, elixir-autogen, elixir-format
+msgid "Only used to estimate live charge energy; XPENG does not publish it."
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:529
+#, elixir-autogen, elixir-format
+msgid "Optional: XPENG export zips joined onto positions for SoC, odometer and range."
+msgstr ""
+
+#: lib/teslamate_web/live/setups_live/form.ex:128
+#: lib/teslamate_web/live/setups_live/index.ex:119
+#, elixir-autogen, elixir-format
+msgid "Other"
+msgstr ""
+
+#: lib/teslamate_web/live/setups_live/index.html.heex:92
+#, elixir-autogen, elixir-format
+msgid "Overlapping range"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:375
+#, elixir-autogen, elixir-format
+msgid "Positions"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:635
+#, elixir-autogen, elixir-format
+msgid "Positions enriched: %{n}"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:160
+#, elixir-autogen, elixir-format
+msgid "Provider URL (e.g. http://homeassistant.local:8200)"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:184
+#, elixir-autogen, elixir-format
+msgid "Provider token"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:93
+#, elixir-autogen, elixir-format
+msgid "Reachable"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:509
+#, elixir-autogen, elixir-format
+msgid "Read-only use from this server only. It bypasses row-level security, so treat it as a password."
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:20
+#, elixir-autogen, elixir-format
+msgid "Refresh status"
+msgstr ""
+
+#: lib/teslamate_web/live/setups_live/form.ex:126
+#: lib/teslamate_web/live/setups_live/index.ex:117
+#, elixir-autogen, elixir-format
+msgid "Roof rack"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:366
+#, elixir-autogen, elixir-format
+msgid "Rows"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:361
+#, elixir-autogen, elixir-format
+msgid "Rows in XPengMate"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:743
+#, elixir-autogen, elixir-format
+msgid "Samples"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:260
+#, elixir-autogen, elixir-format
+msgid "Save & apply"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:566
+#, elixir-autogen, elixir-format
+msgid "Save history source"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.ex:135
+#, elixir-autogen, elixir-format
+msgid "Saved. The engine is restarting on the new source."
+msgstr ""
+
+#: lib/teslamate_web/live/setups_live/form.html.heex:38
+#, elixir-autogen, elixir-format
+msgid "Select a car"
+msgstr ""
+
+#: lib/teslamate_web/live/setups_live/form.html.heex:56
+#, elixir-autogen, elixir-format
+msgid "Select an aspect"
+msgstr ""
+
+#: lib/teslamate_web/live/setups_live/index.html.heex:186
+#, elixir-autogen, elixir-format
+msgid "Setup"
+msgstr ""
+
+#: lib/teslamate_web/live/setups_live/form.ex:104
+#, elixir-autogen, elixir-format
+msgid "Setup \"%{label}\" created"
+msgstr ""
+
+#: lib/teslamate_web/live/setups_live/form.ex:107
+#, elixir-autogen, elixir-format
+msgid "Setup \"%{label}\" updated"
+msgstr ""
+
+#: lib/teslamate_web/live/setups_live/form.html.heex:4
+#: lib/teslamate_web/live/setups_live/index.ex:41
+#: lib/teslamate_web/live/setups_live/index.html.heex:5
+#: lib/teslamate_web/live/setups_live/index.html.heex:12
+#: lib/teslamate_web/templates/layout/root.html.heex:131
+#, elixir-autogen, elixir-format
+msgid "Setups"
+msgstr ""
+
+#: lib/teslamate_web/live/setups_live/index.html.heex:163
+#, elixir-autogen, elixir-format
+msgid "Setups dashboard"
+msgstr ""
+
+#: lib/teslamate_web/live/setups_live/index.html.heex:44
+#, elixir-autogen, elixir-format
+msgid "Some ranges overlap for the same car and aspect. A drive is attributed to the setup with the newest start date."
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:50
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:300
+#, elixir-autogen, elixir-format
+msgid "Source"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:376
+#, elixir-autogen, elixir-format
+msgid "States"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:633
+#, elixir-autogen, elixir-format
+msgid "States added: %{n}"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:485
+#, elixir-autogen, elixir-format
+msgid "Supabase URL"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:497
+#, elixir-autogen, elixir-format
+msgid "Supabase service-role key"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:570
+#, elixir-autogen, elixir-format
+msgid "Sync now"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:319
+#, elixir-autogen, elixir-format
+msgid "Sync running"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:365
+#, elixir-autogen, elixir-format
+msgid "Table"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:271
+#, elixir-autogen, elixir-format
+msgid "Test result"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:264
+#, elixir-autogen, elixir-format
+msgid "Test source"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:221
+#, elixir-autogen, elixir-format
+msgid "The native engine authenticates to XPENG itself. Install the credentials below, then switch the source to this."
+msgstr ""
+
+#: lib/teslamate_web/templates/layout/root.html.heex:179
+#, elixir-autogen, elixir-format
+msgid "To ensure that your <strong>Tesla API tokens are stored securely</strong>, an encryption key must be provided to XpengMate via the <code>ENCRYPTION_KEY</code> environment variable. Otherwise, a <strong>login will be required after every restart</strong>."
+msgstr ""
+
+#: lib/teslamate_web/controllers/xpeng_mate_controller.ex:39
+#, elixir-autogen, elixir-format
+msgid "Too many files: upload at most %{max} at a time."
+msgstr ""
+
+#: lib/teslamate_web/live/setups_live/form.ex:125
+#: lib/teslamate_web/live/setups_live/index.ex:116
+#, elixir-autogen, elixir-format
+msgid "Towing"
+msgstr ""
+
+#: lib/teslamate_web/live/setups_live/form.ex:124
+#: lib/teslamate_web/live/setups_live/index.ex:115
+#, elixir-autogen, elixir-format
+msgid "Tyres"
+msgstr ""
+
+#: lib/teslamate_web/live/setups_live/index.html.heex:14
+#, elixir-autogen, elixir-format
+msgid "Tyres, towing, roof rack and load are independent aspects and their date ranges may overlap. Drives are tagged by date, so correcting a date re-tags history."
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:89
+#, elixir-autogen, elixir-format
+msgid "URL"
+msgstr ""
+
+#: lib/teslamate_web/live/setups_live/form.html.heex:112
+#: lib/teslamate_web/live/setups_live/index.html.heex:56
+#, elixir-autogen, elixir-format
+msgid "Until"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:688
+#, elixir-autogen, elixir-format
+msgid "Up to 12 files at once; each is stored on the history service and imported once."
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:698
+#, elixir-autogen, elixir-format
+msgid "Upload & import"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:587
+#, elixir-autogen, elixir-format
+msgid "Upload the GDPR export zips XPENG sends you (Data → Export). They are rolling 30-day windows, so uploading several is expected: the importer merges the windows and skips anything already in the database, then fills battery, odometer and range into existing GPS positions."
+msgstr ""
+
+#: lib/teslamate_web/controllers/xpeng_mate_controller.ex:48
+#, elixir-autogen, elixir-format
+msgid "Uploaded %{count} file(s). The import is running in the background; this page refreshes itself."
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:85
+#, elixir-autogen, elixir-format
+msgid "Upstream provider"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:537
+#, elixir-autogen, elixir-format
+msgid "Usable battery (kWh)"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:241
+#, elixir-autogen, elixir-format
+msgid "Usable battery capacity (kWh)"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:54
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:230
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:434
+#, elixir-autogen, elixir-format
+msgid "VIN"
+msgstr ""
+
+#: lib/teslamate_web/live/setups_live/form.html.heex:85
+#, elixir-autogen, elixir-format
+msgid "What the aspect was set to, in your own words."
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:138
+#, elixir-autogen, elixir-format
+msgid "Which source should the engine use?"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:742
+#, elixir-autogen, elixir-format
+msgid "Window"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:71
+#, elixir-autogen, elixir-format
+msgid "XOS version"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.ex:511
+#, elixir-autogen, elixir-format
+msgid "XPENG cloud (native engine)"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:582
+#, elixir-autogen, elixir-format
+msgid "XPENG data export files"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.ex:26
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:4
+#: lib/teslamate_web/templates/layout/root.html.heex:123
+#, elixir-autogen, elixir-format
+msgid "XpengMate"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:466
+#, elixir-autogen, elixir-format
+msgid "Your EVConduit API key. The versioned data API (/api/v1/xpeng) is cursor-paged, so this imports the account's full history: trips, charging sessions, GPS positions, tyre pressures, charge curves and online/asleep spans."
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:335
+#, elixir-autogen, elixir-format
+msgid "failed"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:701
+#, elixir-autogen, elixir-format
+msgid "import running…"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:347
+#, elixir-autogen, elixir-format
+msgid "in XPengMate database: %{db} days old"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:351
+#, elixir-autogen, elixir-format
+msgid "in the EVConduit source: %{src} days old"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:461
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:504
+#, elixir-autogen, elixir-format
+msgid "leave empty to keep the saved key"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:201
+#, elixir-autogen, elixir-format
+msgid "leave empty to keep the saved token"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.ex:489
+#, elixir-autogen, elixir-format
+msgid "never"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:100
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:324
+#, elixir-autogen, elixir-format
+msgid "no"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:312
+#, elixir-autogen, elixir-format
+msgid "not configured"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:333
+#, elixir-autogen, elixir-format
+msgid "ok"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:66
+#, elixir-autogen, elixir-format
+msgid "via upstream provider"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:454
+#, elixir-autogen, elixir-format
+msgid "xpengcardata API key"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:96
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:322
+#, elixir-autogen, elixir-format
+msgid "yes"
+msgstr ""
+
+#: lib/teslamate_web/live/ask_live/index.html.heex:35
+#, elixir-autogen, elixir-format
+msgid "%{used} of %{limit} questions used today"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:771
+#, elixir-autogen, elixir-format
+msgid "AI assistant (Ask)"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:785
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:831
+#, elixir-autogen, elixir-format
+msgid "API key"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.ex:326
+#, elixir-autogen, elixir-format
+msgid "API key removed."
+msgstr ""
+
+#: lib/teslamate_web/live/ask_live/index.ex:166
+#, elixir-autogen, elixir-format
+msgid "Add a DeepSeek API key on the XpengMate page before asking a question."
+msgstr ""
+
+#: lib/teslamate_web/live/ask_live/index.html.heex:77
+#, elixir-autogen, elixir-format
+msgid "Add a DeepSeek API key on the XpengMate page to use Ask."
+msgstr ""
+
+#: lib/teslamate_web/live/ask_live/index.ex:29
+#: lib/teslamate_web/live/ask_live/index.html.heex:4
+#: lib/teslamate_web/live/ask_live/index.html.heex:8
+#: lib/teslamate_web/live/ask_live/index.html.heex:185
+#: lib/teslamate_web/templates/layout/root.html.heex:115
+#, elixir-autogen, elixir-format
+msgid "Ask"
+msgstr ""
+
+#: lib/teslamate_web/live/ask_live/index.html.heex:170
+#, elixir-autogen, elixir-format
+msgid "Ask about your trips, charging, tyres or battery…"
+msgstr ""
+
+#: lib/teslamate_web/live/ask_live/index.ex:159
+#: lib/teslamate_web/live/ask_live/index.ex:308
+#, elixir-autogen, elixir-format
+msgid "Ask is disabled. Enable it on the XpengMate page first."
+msgstr ""
+
+#: lib/teslamate_web/live/ask_live/index.html.heex:65
+#, elixir-autogen, elixir-format
+msgid "Ask is switched off"
+msgstr ""
+
+#: lib/teslamate_web/live/ask_live/index.html.heex:10
+#, elixir-autogen, elixir-format
+msgid "Ask questions about your own trips, charging, tyres and battery. An AI model reads your data and answers."
+msgstr ""
+
+#: lib/teslamate_web/live/ask_live/index.html.heex:122
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:796
+#, elixir-autogen, elixir-format
+msgid "Assistant"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.ex:294
+#, elixir-autogen, elixir-format
+msgid "Assistant settings saved."
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:862
+#, elixir-autogen, elixir-format
+msgid "Base URL"
+msgstr ""
+
+#: lib/teslamate_web/live/ask_live/index.html.heex:57
+#, elixir-autogen, elixir-format
+msgid "Clear conversation"
+msgstr ""
+
+#: lib/teslamate_web/live/ask_live/index.ex:50
+#, elixir-autogen, elixir-format
+msgid "Compare my consumption on my current tyres with my last set"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.ex:458
+#, elixir-autogen, elixir-format
+msgid "Could not save the assistant settings: %{errors}"
+msgstr ""
+
+#: lib/teslamate_web/live/ask_live/index.html.heex:89
+#, elixir-autogen, elixir-format
+msgid "Daily limit reached"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:893
+#, elixir-autogen, elixir-format
+msgid "Enable the Ask page"
+msgstr ""
+
+#: lib/teslamate_web/live/ask_live/index.ex:52
+#, elixir-autogen, elixir-format
+msgid "How is my DC fast charging holding up?"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:821
+#, elixir-autogen, elixir-format
+msgid "Loading assistant status…"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:806
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:852
+#, elixir-autogen, elixir-format
+msgid "Model"
+msgstr ""
+
+#: lib/teslamate_web/live/ask_live/index.html.heex:76
+#, elixir-autogen, elixir-format
+msgid "No API key configured"
+msgstr ""
+
+#: lib/teslamate_web/live/ask_live/index.ex:312
+#, elixir-autogen, elixir-format
+msgid "No API key is configured. Add one on the XpengMate page."
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:911
+#, elixir-autogen, elixir-format
+msgid "Open Ask"
+msgstr ""
+
+#: lib/teslamate_web/live/ask_live/index.html.heex:81
+#, elixir-autogen, elixir-format
+msgid "Open XpengMate settings"
+msgstr ""
+
+#: lib/teslamate_web/live/ask_live/index.ex:183
+#, elixir-autogen, elixir-format
+msgid "Questions are limited to %{limit} characters."
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:872
+#, elixir-autogen, elixir-format
+msgid "Questions per day"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:810
+#, elixir-autogen, elixir-format
+msgid "Questions today"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:909
+#, elixir-autogen, elixir-format
+msgid "Remove key"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:907
+#, elixir-autogen, elixir-format
+msgid "Remove the stored API key?"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:844
+#, elixir-autogen, elixir-format
+msgid "Stored encrypted with the same key as your Tesla tokens and never shown again. A key in the environment overrides this one."
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:901
+#, elixir-autogen, elixir-format
+msgid "Test connection"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:776
+#, elixir-autogen, elixir-format
+msgid "The Ask page answers questions about your own data with an AI model. Summaries of your drives, charging, tyres and battery are sent to the provider to produce each answer. The assistant is read-only, and every question is counted against a daily cap because each one costs money."
+msgstr ""
+
+#: lib/teslamate_web/live/ask_live/index.ex:326
+#, elixir-autogen, elixir-format
+msgid "The assistant could not answer. Please try again."
+msgstr ""
+
+#: lib/teslamate_web/live/ask_live/index.html.heex:67
+#, elixir-autogen, elixir-format
+msgid "The assistant is disabled. Enable it on the XpengMate page to start asking questions."
+msgstr ""
+
+#: lib/teslamate_web/live/ask_live/index.ex:153
+#: lib/teslamate_web/live/ask_live/index.ex:323
+#, elixir-autogen, elixir-format
+msgid "The assistant is still answering. Please wait a moment."
+msgstr ""
+
+#: lib/teslamate_web/live/ask_live/index.ex:99
+#, elixir-autogen, elixir-format
+msgid "The assistant stopped before it could answer. Please try again."
+msgstr ""
+
+#: lib/teslamate_web/live/ask_live/index.html.heex:25
+#, elixir-autogen, elixir-format
+msgid "The model can be wrong, so treat an answer as a hint, not as a fact: the assistant is read-only and cannot change your data or the car."
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:920
+#, elixir-autogen, elixir-format
+msgid "The provider accepted the key."
+msgstr ""
+
+#: lib/teslamate_web/live/ask_live/index.ex:203
+#: lib/teslamate_web/live/ask_live/index.html.heex:157
+#, elixir-autogen, elixir-format
+msgid "Thinking…"
+msgstr ""
+
+#: lib/teslamate_web/live/ask_live/index.ex:320
+#, elixir-autogen, elixir-format
+msgid "This conversation is too long. Clear it and start again."
+msgstr ""
+
+#: lib/teslamate_web/live/ask_live/index.html.heex:22
+#, elixir-autogen, elixir-format
+msgid "To generate an answer, summaries of your drives, charging sessions, tyre/setup records and battery readings are sent to DeepSeek."
+msgstr ""
+
+#: lib/teslamate_web/live/ask_live/index.ex:177
+#, elixir-autogen, elixir-format
+msgid "Type a question first."
+msgstr ""
+
+#: lib/teslamate_web/live/ask_live/index.html.heex:178
+#, elixir-autogen, elixir-format
+msgid "Up to 1,000 characters. Answers are generated from your own data and are not stored by the server."
+msgstr ""
+
+#: lib/teslamate_web/live/ask_live/index.ex:76
+#, elixir-autogen, elixir-format
+msgid "Wait for the current answer before clearing the conversation."
+msgstr ""
+
+#: lib/teslamate_web/live/ask_live/index.ex:53
+#, elixir-autogen, elixir-format
+msgid "What does my battery health look like?"
+msgstr ""
+
+#: lib/teslamate_web/live/ask_live/index.ex:51
+#, elixir-autogen, elixir-format
+msgid "Which month had my best efficiency?"
+msgstr ""
+
+#: lib/teslamate_web/live/ask_live/index.html.heex:116
+#, elixir-autogen, elixir-format
+msgid "You"
+msgstr ""
+
+#: lib/teslamate_web/live/ask_live/index.html.heex:91
+#, elixir-autogen, elixir-format
+msgid "You have used all %{limit} questions for today. The limit resets at midnight (UTC)."
+msgstr ""
+
+#: lib/teslamate_web/live/ask_live/index.ex:173
+#: lib/teslamate_web/live/ask_live/index.ex:316
+#, elixir-autogen, elixir-format
+msgid "You have used today's questions. Try again tomorrow or raise the limit."
+msgstr ""
+
+#: lib/teslamate_web/live/ask_live/index.html.heex:19
+#, elixir-autogen, elixir-format
+msgid "Your data leaves this server"
+msgstr ""
+
+#: lib/teslamate_web/live/ask_live/index.html.heex:145
+#, elixir-autogen, elixir-format
+msgid "checked:"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:799
+#, elixir-autogen, elixir-format
+msgid "enabled"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.ex:461
+#, elixir-autogen, elixir-format
+msgid "from the environment"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:840
+#, elixir-autogen, elixir-format
+msgid "leave empty to keep the stored key"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:814
+#, elixir-autogen, elixir-format
+msgid "limit reached"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.ex:463
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:791
+#, elixir-autogen, elixir-format
+msgid "not set"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:788
+#, elixir-autogen, elixir-format
+msgid "set"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.ex:462
+#, elixir-autogen, elixir-format
+msgid "stored encrypted in the database"
+msgstr ""
+
+#: lib/teslamate_web/live/xpengmate_live/index.html.heex:801
+#, elixir-autogen, elixir-format
+msgid "switched off"
 msgstr ""
