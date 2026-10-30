@@ -2087,11 +2087,6 @@ msgstr ""
 msgid "Checking your data…"
 msgstr ""
 
-#: lib/teslamate_web/components/pengu.ex:204
-#, elixir-autogen, elixir-format
-msgid "Here's what I found below."
-msgstr ""
-
 #: lib/teslamate_web/components/pengu.ex:195
 #, elixir-autogen, elixir-format
 msgid "Hey - ask me about your car. I can read your drives, charging, tyres and battery."
@@ -2107,7 +2102,12 @@ msgstr ""
 msgid "Listening…"
 msgstr ""
 
-#: lib/teslamate_web/components/pengu.ex:206
+#: lib/teslamate_web/components/pengu.ex:208
 #, elixir-autogen, elixir-format
 msgid "That didn't work. Want to try again?"
+msgstr ""
+
+#: lib/teslamate_web/components/pengu.ex:206
+#, elixir-autogen, elixir-format
+msgid "Here's what I found."
 msgstr ""

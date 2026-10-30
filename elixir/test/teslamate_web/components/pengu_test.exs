@@ -42,6 +42,14 @@ defmodule TeslaMateWeb.PenguTest do
       assert draw(%{state: :idle, art: true, hint: true}) =~ "ask me about your car"
     end
 
+    test "the speaking copy does not claim the answer is below" do
+      html = draw(%{state: :speaking, art: true})
+
+      assert html =~ "Here"
+      refute html =~ "below"
+      refute html =~ "above"
+    end
+
     test "a note is escaped, never treated as markup" do
       html = draw(%{state: :thinking, art: true, note: "<script>alert(1)</script>"})
       refute html =~ "<script>"

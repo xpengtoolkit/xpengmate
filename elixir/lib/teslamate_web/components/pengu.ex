@@ -201,7 +201,9 @@ defmodule TeslaMateWeb.Pengu do
   defp bubble(:thinking, note, _hint) when is_binary(note) and note != "", do: note
   defp bubble(:thinking, _note, _hint), do: gettext("Checking your data…")
 
-  defp bubble(:speaking, _note, _hint), do: gettext("Here's what I found below.")
+  # No "below"/"above": the bubble sits under the conversation, so the answer is
+  # above it. Directional copy would be wrong the moment the layout changes.
+  defp bubble(:speaking, _note, _hint), do: gettext("Here's what I found.")
 
   defp bubble(:error, _note, _hint), do: gettext("That didn't work. Want to try again?")
 end

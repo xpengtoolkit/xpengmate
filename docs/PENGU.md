@@ -247,7 +247,7 @@ The mapping is deliberately dumb — no event does anything but set a mood:
 | user types | `listening` | "Listening…" |
 | `{:progress, label}` | `thinking` | `label` (e.g. "Reading your data…") |
 | `{:tool, name, summary}` | `thinking` | `summary` (e.g. "read 379 drives") |
-| `{:answer, markdown}` | `speaking` | "Here's what I found below." |
+| `{:answer, markdown}` | `speaking` | "Here's what I found." (no direction: the bubble is under the conversation) |
 | `{:error, message}` | `error` | "That didn't work. Want to try again?" |
 | `:done` | stays, then `idle` after N s | — |
 
