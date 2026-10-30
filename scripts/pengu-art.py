@@ -35,7 +35,7 @@ import urllib.request
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ART = os.path.join(ROOT, "elixir", "priv", "static", "images", "pengu")
-WORK = os.path.join(ROOT, "tmp", "pengu-art")
+WORK = os.path.join(ROOT, "elixir", "tmp", "pengu-art")  # elixir/tmp is git-ignored
 MANIFEST = os.path.join(ROOT, "docs", "pengu-art.json")
 API = "https://openrouter.ai/api/v1"
 
@@ -219,7 +219,7 @@ def character_stage() -> float:
 def video_stage() -> float:
     hero = os.path.join(WORK, "hero.png")
     if not os.path.exists(hero):
-        sys.exit("run --character first (needs tmp/pengu-art/hero.png)")
+        sys.exit("run --character first (needs elixir/tmp/pengu-art/hero.png)")
     frame = os.path.join(WORK, "first-frame.png")
     ffmpeg(
         "-f", "lavfi", "-i", f"color=c={CHROMA}:s=720x1280",
