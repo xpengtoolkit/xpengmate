@@ -1785,7 +1785,7 @@ msgstr ""
 msgid "API key removed."
 msgstr ""
 
-#: lib/teslamate_web/live/ask_live/index.ex:206
+#: lib/teslamate_web/live/ask_live/index.ex:207
 #, elixir-autogen, elixir-format
 msgid "Add a DeepSeek API key on the XpengMate page before asking a question."
 msgstr ""
@@ -1809,8 +1809,8 @@ msgstr ""
 msgid "Ask about your trips, charging, tyres or battery…"
 msgstr ""
 
-#: lib/teslamate_web/live/ask_live/index.ex:199
-#: lib/teslamate_web/live/ask_live/index.ex:394
+#: lib/teslamate_web/live/ask_live/index.ex:200
+#: lib/teslamate_web/live/ask_live/index.ex:395
 #, elixir-autogen, elixir-format
 msgid "Ask is disabled. Enable it on the XpengMate page first."
 msgstr ""
@@ -1846,7 +1846,7 @@ msgstr ""
 msgid "Clear conversation"
 msgstr ""
 
-#: lib/teslamate_web/live/ask_live/index.ex:63
+#: lib/teslamate_web/live/ask_live/index.ex:64
 #, elixir-autogen, elixir-format
 msgid "Compare my consumption on my current tyres with my last set"
 msgstr ""
@@ -1866,7 +1866,7 @@ msgstr ""
 msgid "Enable the Ask page"
 msgstr ""
 
-#: lib/teslamate_web/live/ask_live/index.ex:65
+#: lib/teslamate_web/live/ask_live/index.ex:66
 #, elixir-autogen, elixir-format
 msgid "How is my DC fast charging holding up?"
 msgstr ""
@@ -1887,7 +1887,7 @@ msgstr ""
 msgid "No API key configured"
 msgstr ""
 
-#: lib/teslamate_web/live/ask_live/index.ex:398
+#: lib/teslamate_web/live/ask_live/index.ex:399
 #, elixir-autogen, elixir-format
 msgid "No API key is configured. Add one on the XpengMate page."
 msgstr ""
@@ -1902,7 +1902,7 @@ msgstr ""
 msgid "Open XpengMate settings"
 msgstr ""
 
-#: lib/teslamate_web/live/ask_live/index.ex:229
+#: lib/teslamate_web/live/ask_live/index.ex:230
 #, elixir-autogen, elixir-format
 msgid "Questions are limited to %{limit} characters."
 msgstr ""
@@ -1942,7 +1942,7 @@ msgstr ""
 msgid "The Ask page answers questions about your own data with an AI model. Summaries of your drives, charging, tyres and battery are sent to the provider to produce each answer. The assistant is read-only, and every question is counted against a daily cap because each one costs money."
 msgstr ""
 
-#: lib/teslamate_web/live/ask_live/index.ex:412
+#: lib/teslamate_web/live/ask_live/index.ex:413
 #, elixir-autogen, elixir-format
 msgid "The assistant could not answer. Please try again."
 msgstr ""
@@ -1952,13 +1952,13 @@ msgstr ""
 msgid "The assistant is disabled. Enable it on the XpengMate page to start asking questions."
 msgstr ""
 
-#: lib/teslamate_web/live/ask_live/index.ex:193
-#: lib/teslamate_web/live/ask_live/index.ex:409
+#: lib/teslamate_web/live/ask_live/index.ex:194
+#: lib/teslamate_web/live/ask_live/index.ex:410
 #, elixir-autogen, elixir-format
 msgid "The assistant is still answering. Please wait a moment."
 msgstr ""
 
-#: lib/teslamate_web/live/ask_live/index.ex:132
+#: lib/teslamate_web/live/ask_live/index.ex:133
 #, elixir-autogen, elixir-format
 msgid "The assistant stopped before it could answer. Please try again."
 msgstr ""
@@ -1973,14 +1973,14 @@ msgstr ""
 msgid "The provider accepted the key."
 msgstr ""
 
-#: lib/teslamate_web/live/ask_live/index.ex:249
-#: lib/teslamate_web/live/ask_live/index.ex:251
+#: lib/teslamate_web/live/ask_live/index.ex:250
+#: lib/teslamate_web/live/ask_live/index.ex:252
 #: lib/teslamate_web/live/ask_live/index.html.heex:163
 #, elixir-autogen, elixir-format
 msgid "Thinking…"
 msgstr ""
 
-#: lib/teslamate_web/live/ask_live/index.ex:406
+#: lib/teslamate_web/live/ask_live/index.ex:407
 #, elixir-autogen, elixir-format
 msgid "This conversation is too long. Clear it and start again."
 msgstr ""
@@ -1990,7 +1990,7 @@ msgstr ""
 msgid "To generate an answer, summaries of your drives, charging sessions, tyre/setup records and battery readings are sent to DeepSeek."
 msgstr ""
 
-#: lib/teslamate_web/live/ask_live/index.ex:223
+#: lib/teslamate_web/live/ask_live/index.ex:224
 #, elixir-autogen, elixir-format
 msgid "Type a question first."
 msgstr ""
@@ -2000,17 +2000,17 @@ msgstr ""
 msgid "Up to 1,000 characters. Answers are generated from your own data and are not stored by the server."
 msgstr ""
 
-#: lib/teslamate_web/live/ask_live/index.ex:99
+#: lib/teslamate_web/live/ask_live/index.ex:100
 #, elixir-autogen, elixir-format
 msgid "Wait for the current answer before clearing the conversation."
 msgstr ""
 
-#: lib/teslamate_web/live/ask_live/index.ex:66
+#: lib/teslamate_web/live/ask_live/index.ex:67
 #, elixir-autogen, elixir-format
 msgid "What does my battery health look like?"
 msgstr ""
 
-#: lib/teslamate_web/live/ask_live/index.ex:64
+#: lib/teslamate_web/live/ask_live/index.ex:65
 #, elixir-autogen, elixir-format
 msgid "Which month had my best efficiency?"
 msgstr ""
@@ -2025,8 +2025,8 @@ msgstr ""
 msgid "You have used all %{limit} questions for today. The limit resets at midnight (UTC)."
 msgstr ""
 
-#: lib/teslamate_web/live/ask_live/index.ex:213
-#: lib/teslamate_web/live/ask_live/index.ex:402
+#: lib/teslamate_web/live/ask_live/index.ex:214
+#: lib/teslamate_web/live/ask_live/index.ex:403
 #, elixir-autogen, elixir-format
 msgid "You have used today's questions. Try again tomorrow or raise the limit."
 msgstr ""
@@ -2082,32 +2082,32 @@ msgstr ""
 msgid "switched off"
 msgstr ""
 
-#: lib/teslamate_web/components/pengu.ex:109
+#: lib/teslamate_web/components/pengu.ex:202
 #, elixir-autogen, elixir-format
 msgid "Checking your data…"
 msgstr ""
 
-#: lib/teslamate_web/components/pengu.ex:111
+#: lib/teslamate_web/components/pengu.ex:204
 #, elixir-autogen, elixir-format
 msgid "Here's what I found below."
 msgstr ""
 
-#: lib/teslamate_web/components/pengu.ex:102
+#: lib/teslamate_web/components/pengu.ex:195
 #, elixir-autogen, elixir-format
 msgid "Hey - ask me about your car. I can read your drives, charging, tyres and battery."
 msgstr ""
 
-#: lib/teslamate_web/live/ask_live/index.ex:220
+#: lib/teslamate_web/live/ask_live/index.ex:221
 #, elixir-autogen, elixir-format
 msgid "I'm listening - ask me something about your car."
 msgstr ""
 
-#: lib/teslamate_web/components/pengu.ex:106
+#: lib/teslamate_web/components/pengu.ex:199
 #, elixir-autogen, elixir-format
 msgid "Listening…"
 msgstr ""
 
-#: lib/teslamate_web/components/pengu.ex:113
+#: lib/teslamate_web/components/pengu.ex:206
 #, elixir-autogen, elixir-format
 msgid "That didn't work. Want to try again?"
 msgstr ""

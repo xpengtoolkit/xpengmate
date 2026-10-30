@@ -155,7 +155,7 @@
 when the answer lands, and settles back to idle a few seconds later. It is
 decoration with a job (state at a glance), so it is aria-hidden and the
 progress line below carries the text for screen readers. --%>
-<.pengu state={@pengu} note={@pengu_note} hint={@turns == [] and not @running} />
+<.pengu state={@pengu} note={@pengu_note} hint={@turns == [] and not @running} art={@pengu_art} />
 
 <%= if @running do %>
   <div class="notification is-info is-light py-2" id="ask-progress">

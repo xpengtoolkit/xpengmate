@@ -1,0 +1,47 @@
+{
+  "generated": "2026-10-30",
+  "provider": "OpenRouter",
+  "models": {
+    "character": "openai/gpt-image-2.5-flare",
+    "idle_video": "google/veo-3.1-lite"
+  },
+  "cost_usd": {
+    "character_and_poses": 0.103,
+    "idle_video_4s_720p_no_audio": 0.12,
+    "total": 0.223
+  },
+  "assets": {
+    "error.png": {
+      "bytes": 115714,
+      "sha256": "0b07187818dea761"
+    },
+    "idle-still.png": {
+      "bytes": 45096,
+      "sha256": "3d65fa424017bc19"
+    },
+    "idle.png": {
+      "bytes": 1114842,
+      "sha256": "63555f0da9eab396"
+    },
+    "listening.png": {
+      "bytes": 121392,
+      "sha256": "d49b0dfacbabee84"
+    },
+    "speaking.png": {
+      "bytes": 121384,
+      "sha256": "4204baff193ed37a"
+    },
+    "thinking.png": {
+      "bytes": 117142,
+      "sha256": "b980e5fd0d671e87"
+    }
+  },
+  "pipeline": "scripts/pengu-art.py",
+  "notes": [
+    "Character images are generated with background=transparent and aspect_ratio 2:3; poses are edits of the hero image passed as input_references so the character stays consistent.",
+    "The idle loop is image-to-video (first frame = the hero composited on flat magenta #ff00ff), keyed back to alpha with ffmpeg colorkey plus a 1px alpha erosion (blur + threshold), then made a seamless boomerang and encoded as an animated PNG.",
+    "The page shows the artwork on a small dark display frame, which also hides the faint keying halo the video's chroma subsampling leaves on light backgrounds.",
+    "idle-still.png is the reduced-motion frame: CSS can freeze transforms but not an animated PNG.",
+    "The hand-drawn SVG mascot remains the fallback when these files are absent (TeslaMateWeb.Pengu.art?/0)."
+  ]
+}

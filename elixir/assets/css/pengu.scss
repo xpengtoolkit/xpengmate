@@ -367,6 +367,96 @@
   }
 }
 
+.pengu {
+  // -- generated artwork ---------------------------------------------------
+  //
+  // Same state contract, different source: five transparent images, with the
+  // idle mood being an animated PNG loop generated from the video model. The
+  // motion is deliberately small - the artwork already moves; the CSS adds the
+  // reaction to a state change (a lean, a tilt, a shake) and a soft glow.
+
+  &--art {
+    min-height: 162px;
+
+    // The live robot is shown on a small display, like the car's own screen:
+    // it gives the animated loop a frame, keeps a faint video-keying halo
+    // invisible, and reads as a device rather than a floating sticker.
+    .pengu-stage {
+      position: relative;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      width: 120px;
+      height: 164px;
+      overflow: hidden;
+      border: 1px solid rgba(76, 215, 196, 0.35);
+      border-radius: 20px;
+      background: radial-gradient(120% 90% at 50% 12%, #1c2c3a 0%, #0b1119 68%, #070b11 100%);
+      box-shadow:
+        0 12px 28px rgba(11, 18, 32, 0.28),
+        inset 0 0 30px rgba(76, 215, 196, 0.12);
+
+      &::after {
+        position: absolute;
+        inset: 0;
+        background: repeating-linear-gradient(
+          0deg,
+          rgba(255, 255, 255, 0.035) 0,
+          rgba(255, 255, 255, 0.035) 1px,
+          transparent 1px,
+          transparent 3px
+        );
+        content: "";
+        pointer-events: none;
+        z-index: 2;
+      }
+    }
+
+    .pengu-art {
+      position: absolute;
+      inset: 7px 5px 5px;
+      width: calc(100% - 10px);
+      height: calc(100% - 12px);
+      opacity: 0;
+      object-fit: contain;
+      filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.35));
+      transition: opacity 0.22s ease;
+      z-index: 1;
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+
+    &[data-state="idle"] .pengu-art--idle,
+    &[data-state="listening"] .pengu-art--listening,
+    &[data-state="thinking"] .pengu-art--thinking,
+    &[data-state="speaking"] .pengu-art--speaking,
+    &[data-state="error"] .pengu-art--error {
+      opacity: 1;
+    }
+
+    &[data-state="idle"] .pengu-stage {
+      animation: pengu-art-breathe 5.5s ease-in-out infinite;
+    }
+
+    &[data-state="listening"] .pengu-stage {
+      transform: scale(1.04) rotate(-1.5deg);
+    }
+
+    &[data-state="thinking"] .pengu-stage {
+      animation: pengu-art-think 2.8s ease-in-out infinite alternate;
+    }
+
+    &[data-state="speaking"] .pengu-stage {
+      animation: pengu-art-talk 0.8s ease-in-out infinite;
+    }
+
+    &[data-state="error"] .pengu-stage {
+      animation: pengu-shake 0.4s ease-in-out 2;
+    }
+  }
+
+}
+
 @media (max-width: 640px) {
   .pengu {
     min-height: 90px;
@@ -374,6 +464,22 @@
     .pengu-stage {
       width: 84px;
       height: 99px;
+    }
+
+    &--art {
+      min-height: 150px;
+
+      .pengu-stage {
+        width: 96px;
+        height: 132px;
+        border-radius: 16px;
+      }
+
+      .pengu-art {
+        inset: 6px 4px 4px;
+        width: calc(100% - 8px);
+        height: calc(100% - 10px);
+      }
     }
 
     .pengu-bubble {
@@ -387,6 +493,18 @@
   .pengu * {
     animation: none !important;
     transition: none !important;
+  }
+
+  // CSS cannot stop an animated PNG, so idle switches to a still of the same
+  // character. The pose images already are stills.
+  .pengu--art[data-state="idle"] {
+    .pengu-art--idle {
+      display: none;
+    }
+
+    .pengu-art--still {
+      opacity: 1;
+    }
   }
 }
 
@@ -546,5 +664,37 @@
   50% {
     opacity: 1;
     transform: translateY(-2px);
+  }
+}
+
+@keyframes pengu-art-breathe {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+
+  50% {
+    transform: translateY(-2px) scale(1.012);
+  }
+}
+
+@keyframes pengu-art-think {
+  from {
+    transform: rotate(-2deg) translateY(0);
+  }
+
+  to {
+    transform: rotate(2deg) translateY(-2px);
+  }
+}
+
+@keyframes pengu-art-talk {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-2.5px);
   }
 }

@@ -52,6 +52,7 @@ defmodule TeslaMateWeb.AskLive.Index do
         pengu: :idle,
         pengu_note: nil,
         pengu_sleep_ref: nil,
+        pengu_art: TeslaMateWeb.Pengu.art?(),
         suggestions: suggestions()
       )
 
