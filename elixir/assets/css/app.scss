@@ -34,6 +34,10 @@
 
 @use "bulma/sass/utilities/mixins" as mx;
 
+// The Ask page's assistant mascot: its own file so the character's states stay
+// together, imported here because @use must precede the style rules below.
+@use "pengu";
+
 // Import the components you need
 @forward "bulma/sass/base";
 @forward "bulma/sass/components/breadcrumb";

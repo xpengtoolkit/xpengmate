@@ -14,11 +14,21 @@ defmodule TeslaMateWeb.AskLive.Index do
 
   use TeslaMateWeb, :live_view
 
+  import TeslaMateWeb.Pengu, only: [pengu: 1]
+
   alias TeslaMate.Agent
 
   on_mount {TeslaMateWeb.InitAssigns, :locale}
 
   @max_question_length 1000
+
+  # "Hey Pengu ..." / "Hey XPENG ..." is stripped, in the spirit of the car's own
+  # wake word: the greeting is not part of the question.
+  @wake_phrase ~r/\A\s*hey[\s,]+(?:pengu|xpeng)\b[:,]?\s*/i
+
+  # How long the mascot stays awake after an answer (or an error) before it
+  # settles back to idle. Configurable so tests do not sleep for six seconds.
+  @pengu_awake_ms_default 6_000
   @max_replayed_turns 10
   @max_replayed_answer_length 4_000
 
@@ -39,6 +49,9 @@ defmodule TeslaMateWeb.AskLive.Index do
         running: false,
         progress: nil,
         run_ref: nil,
+        pengu: :idle,
+        pengu_note: nil,
+        pengu_sleep_ref: nil,
         suggestions: suggestions()
       )
 
@@ -58,7 +71,17 @@ defmodule TeslaMateWeb.AskLive.Index do
 
   @impl true
   def handle_event("update_question", params, socket) do
-    {:noreply, assign(socket, question: to_string(params["content"] || ""), composer_error: nil)}
+    question = to_string(params["content"] || "")
+    socket = assign(socket, question: question, composer_error: nil)
+
+    socket =
+      cond do
+        String.trim(question) == "" -> set_pengu(socket, :idle)
+        socket.assigns.pengu == :idle -> set_pengu(socket, :listening)
+        true -> socket
+      end
+
+    {:noreply, socket}
   end
 
   def handle_event("ask", params, socket) do
@@ -77,12 +100,14 @@ defmodule TeslaMateWeb.AskLive.Index do
        )}
     else
       {:noreply,
-       assign(socket,
+       socket
+       |> assign(
          turns: [],
          question: "",
          composer_error: nil,
          progress: nil
-       )}
+       )
+       |> set_pengu(:idle)}
     end
   end
 
@@ -91,6 +116,14 @@ defmodule TeslaMateWeb.AskLive.Index do
   @impl true
   def handle_info({:agent_event, event}, socket) do
     {:noreply, handle_agent_event(socket, event)}
+  end
+
+  def handle_info({:pengu_sleep, ref}, socket) do
+    if socket.assigns.pengu_sleep_ref == ref do
+      {:noreply, set_pengu(socket, :idle)}
+    else
+      {:noreply, socket}
+    end
   end
 
   def handle_info({:DOWN, ref, :process, _pid, _reason}, %{assigns: %{run_ref: ref}} = socket) do
@@ -106,14 +139,18 @@ defmodule TeslaMateWeb.AskLive.Index do
 
   defp handle_agent_event(socket, {:progress, label}) when is_binary(label) do
     if socket.assigns.running do
-      assign(socket, progress: label)
+      socket
+      |> assign(progress: label)
+      |> set_pengu(:thinking, label)
     else
       socket
     end
   end
 
   defp handle_agent_event(socket, {:tool, _name, summary}) when is_binary(summary) do
-    update_last_turn(socket, fn turn -> %{turn | tools: turn.tools ++ [summary]} end)
+    socket
+    |> update_last_turn(fn turn -> %{turn | tools: turn.tools ++ [summary]} end)
+    |> set_pengu(:thinking, summary)
   end
 
   defp handle_agent_event(socket, {:chart, %{title: title, svg: svg}}) do
@@ -126,7 +163,9 @@ defmodule TeslaMateWeb.AskLive.Index do
   end
 
   defp handle_agent_event(socket, {:answer, markdown}) when is_binary(markdown) do
-    update_last_turn(socket, fn turn -> %{turn | content: markdown} end)
+    socket
+    |> update_last_turn(fn turn -> %{turn | content: markdown} end)
+    |> set_pengu(:speaking)
   end
 
   defp handle_agent_event(socket, {:meta, _meta}), do: socket
@@ -144,7 +183,8 @@ defmodule TeslaMateWeb.AskLive.Index do
   # -- submit ---------------------------------------------------------------
 
   defp submit_question(socket, raw) do
-    question = raw |> to_string() |> String.trim()
+    {stripped, woke?} = strip_wake_phrase(raw)
+    question = stripped |> to_string() |> String.trim()
 
     cond do
       socket.assigns.running ->
@@ -172,6 +212,12 @@ defmodule TeslaMateWeb.AskLive.Index do
            composer_error:
              gettext("You have used today's questions. Try again tomorrow or raise the limit.")
          )}
+
+      question == "" and woke? ->
+        {:noreply,
+         socket
+         |> set_pengu(:listening)
+         |> assign(composer_error: gettext("I'm listening - ask me something about your car."))}
 
       question == "" ->
         {:noreply, assign(socket, composer_error: gettext("Type a question first."))}
@@ -202,6 +248,7 @@ defmodule TeslaMateWeb.AskLive.Index do
         running: true,
         progress: gettext("Thinking…")
       )
+      |> set_pengu(:thinking, gettext("Thinking…"))
       |> refresh_blocked()
 
     messages = replay_messages(socket.assigns.turns)
@@ -222,13 +269,52 @@ defmodule TeslaMateWeb.AskLive.Index do
     |> assign(running: false, progress: nil, run_ref: nil)
     |> refresh_status()
     |> refresh_blocked()
+    |> schedule_pengu_sleep()
   end
 
   defp fail(socket, message) do
     socket
     |> assign(running: false, progress: nil, run_ref: nil)
     |> update_last_turn(fn turn -> %{turn | error: message} end)
+    |> set_pengu(:error)
     |> refresh_blocked()
+    |> schedule_pengu_sleep()
+  end
+
+  # -- mascot ---------------------------------------------------------------
+
+  # A new reference per mood makes a pending sleep message from an earlier mood
+  # harmless: it no longer matches the current one.
+  defp set_pengu(socket, state, note \\ nil) do
+    assign(socket,
+      pengu: state,
+      pengu_note: note,
+      pengu_sleep_ref: if(state == :idle, do: nil, else: make_ref())
+    )
+  end
+
+  defp schedule_pengu_sleep(socket) do
+    case socket.assigns.pengu_sleep_ref do
+      ref when is_reference(ref) ->
+        Process.send_after(self(), {:pengu_sleep, ref}, pengu_awake_ms())
+        socket
+
+      _ ->
+        socket
+    end
+  end
+
+  defp pengu_awake_ms do
+    Application.get_env(:teslamate, :pengu_awake_ms, @pengu_awake_ms_default)
+  end
+
+  defp strip_wake_phrase(raw) do
+    text = to_string(raw)
+
+    case Regex.run(@wake_phrase, text) do
+      [match | _] -> {String.replace_prefix(text, match, ""), true}
+      nil -> {text, false}
+    end
   end
 
   # -- conversation ---------------------------------------------------------

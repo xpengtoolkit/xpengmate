@@ -8,3 +8,6 @@ config :teslamate, TeslaMateWeb.Endpoint, server: false
 config :teslamate, TeslaMate.Repo, pool: Ecto.Adapters.SQL.Sandbox
 
 config :phoenix, :plug_init_mode, :runtime
+
+# The Ask page's mascot settles back to idle after this long; 6 s in production.
+config :teslamate, :pengu_awake_ms, 50

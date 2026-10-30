@@ -151,6 +151,12 @@
   <% end %>
 </div>
 
+<%!-- The little assistant: wakes as you type, thinks while it reads, talks
+when the answer lands, and settles back to idle a few seconds later. It is
+decoration with a job (state at a glance), so it is aria-hidden and the
+progress line below carries the text for screen readers. --%>
+<.pengu state={@pengu} note={@pengu_note} hint={@turns == [] and not @running} />
+
 <%= if @running do %>
   <div class="notification is-info is-light py-2" id="ask-progress">
     <span class="icon is-small"><i class="mdi mdi-progress-clock"></i></span>

@@ -216,6 +216,13 @@ The design is deliberately narrow:
 * there is no write path at all — the assistant cannot change data, and the
   prompt says so.
 
+The page has a small robot to show that state at a glance: it wakes as you type
+(listening), orbits while it reads your data (thinking), shows an equaliser when
+the answer lands, and squints if the provider fails. Say "Hey Pengu" (or "Hey
+XPENG") and the greeting is stripped from the question, like the car's own wake
+word. It is decoration with a job: CSS-only animation, `aria-hidden`, and
+frozen under `prefers-reduced-motion`.
+
 **What leaves your server:** to answer, summaries of the drives, charges, tyre
 setups and battery readings in that snapshot are sent to the AI provider
 (DeepSeek by default, or any OpenAI-compatible endpoint via `DEEPSEEK_BASE_URL`).

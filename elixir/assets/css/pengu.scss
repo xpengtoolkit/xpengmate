@@ -1,0 +1,474 @@
+// Pengu - the little assistant that wakes up on the Ask page.
+//
+// The character is our own inline SVG (see TeslaMateWeb.Pengu), and every state
+// is a CSS animation keyed off `data-state` on the wrapper: idle floats and
+// blinks, listening leans in with ripples, thinking orbits dots, speaking
+// shows an equaliser, error shakes. No JavaScript, no image asset, and the
+// whole thing is switched off under prefers-reduced-motion.
+
+.pengu {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.75rem;
+  margin: 0 0 1rem;
+  min-height: 104px;
+
+  .pengu-stage {
+    flex: 0 0 auto;
+    width: 96px;
+    height: 104px;
+    transition: transform 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.4);
+  }
+
+  .pengu-bot {
+    display: block;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    color: #cbd8e4;
+  }
+
+  // -- the character ------------------------------------------------------
+
+  .pengu-shell {
+    fill: #f5f9fc;
+    stroke: #d7e2ec;
+    stroke-width: 2;
+  }
+
+  .pengu-ear {
+    fill: #e3ebf2;
+    stroke: #d7e2ec;
+    stroke-width: 1.5;
+  }
+
+  .pengu-visor {
+    fill: #0b1220;
+  }
+
+  .pengu-eye {
+    fill: #4cd7c4;
+  }
+
+  .pengu-torso {
+    fill: #f5f9fc;
+    stroke: #d7e2ec;
+    stroke-width: 2;
+  }
+
+  .pengu-arm {
+    fill: #e9f0f6;
+    stroke: #d7e2ec;
+    stroke-width: 1.5;
+  }
+
+  .pengu-core {
+    fill: none;
+    stroke: #4cd7c4;
+    stroke-width: 2;
+    opacity: 0.8;
+  }
+
+  .pengu-core-dot {
+    fill: #4cd7c4;
+  }
+
+  .pengu-shadow {
+    fill: rgba(11, 18, 32, 0.12);
+  }
+
+  .pengu-antenna {
+    stroke: currentColor;
+    stroke-width: 3;
+    stroke-linecap: round;
+  }
+
+  .pengu-antenna-tip {
+    fill: #4cd7c4;
+    filter: drop-shadow(0 0 5px rgba(76, 215, 196, 0.9));
+  }
+
+  .pengu-ripple {
+    fill: none;
+    stroke: #4cd7c4;
+    stroke-width: 2;
+    opacity: 0;
+  }
+
+  .pengu-orbit {
+    opacity: 0;
+    transform-box: view-box;
+    transform-origin: 60px 15px;
+  }
+
+  .pengu-orbit-dot {
+    fill: #4cd7c4;
+  }
+
+  .pengu-wave {
+    opacity: 0;
+  }
+
+  .pengu-wave-bar {
+    fill: #4cd7c4;
+    transform-box: fill-box;
+    transform-origin: center;
+  }
+
+  // -- idle ---------------------------------------------------------------
+
+  .pengu-float {
+    animation: pengu-bob 4.2s ease-in-out infinite;
+  }
+
+  .pengu-eyes {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: pengu-blink 6.2s infinite;
+  }
+
+  .pengu-antenna-tip {
+    animation: pengu-pulse 3.4s ease-in-out infinite;
+  }
+
+  // -- listening ----------------------------------------------------------
+
+  &[data-state="listening"] {
+    .pengu-stage {
+      transform: scale(1.06);
+    }
+
+    .pengu-head {
+      transform-box: fill-box;
+      transform-origin: 50% 90%;
+      animation: pengu-lean 1.6s ease-in-out infinite alternate;
+    }
+
+    .pengu-eyes {
+      animation: none;
+      transform: scale(1.15);
+    }
+
+    .pengu-ripple {
+      animation: pengu-ripple 2s ease-out infinite;
+    }
+
+    .pengu-ripple-2 {
+      animation-delay: 1s;
+    }
+
+    .pengu-antenna-tip {
+      animation: pengu-pulse 1.1s ease-in-out infinite;
+    }
+  }
+
+  // -- thinking -----------------------------------------------------------
+
+  &[data-state="thinking"] {
+    .pengu-stage {
+      transform: scale(1.1);
+    }
+
+    .pengu-float {
+      animation: pengu-drift 2.4s ease-in-out infinite;
+    }
+
+    .pengu-orbit {
+      opacity: 1;
+      animation: pengu-spin 1.7s linear infinite;
+    }
+
+    .pengu-eyes {
+      animation: pengu-look 1.8s ease-in-out infinite alternate;
+    }
+
+    .pengu-antenna-tip {
+      animation: pengu-pulse 0.9s ease-in-out infinite;
+    }
+  }
+
+  // -- speaking -----------------------------------------------------------
+
+  &[data-state="speaking"] {
+    .pengu-stage {
+      transform: scale(1.12);
+    }
+
+    .pengu-float {
+      animation: pengu-nod 0.7s ease-in-out infinite;
+    }
+
+    .pengu-wave {
+      opacity: 1;
+    }
+
+    .pengu-wave-bar {
+      animation: pengu-eq 0.7s ease-in-out infinite;
+    }
+
+    .pengu-wave-bar:nth-child(2) {
+      animation-delay: 0.1s;
+    }
+
+    .pengu-wave-bar:nth-child(3) {
+      animation-delay: 0.2s;
+    }
+
+    .pengu-wave-bar:nth-child(4) {
+      animation-delay: 0.3s;
+    }
+  }
+
+  // -- error --------------------------------------------------------------
+
+  &[data-state="error"] {
+    .pengu-bot {
+      animation: pengu-shake 0.4s ease-in-out 2;
+    }
+
+    .pengu-eyes {
+      animation: none;
+      transform: scaleY(0.35);
+    }
+
+    .pengu-antenna-tip {
+      fill: #ff8a80;
+      filter: drop-shadow(0 0 6px rgba(255, 138, 128, 0.9));
+    }
+  }
+
+  // -- speech bubble ------------------------------------------------------
+
+  .pengu-bubble {
+    position: relative;
+    max-width: 360px;
+    margin-bottom: 0.6rem;
+    padding: 0.55rem 0.85rem;
+    border: 1px solid var(--bulma-border, #dbe3ea);
+    border-radius: 0.9rem;
+    background: var(--bulma-scheme-main, #fff);
+    color: var(--bulma-text-strong, #363636);
+    font-size: 0.85rem;
+    line-height: 1.35;
+    box-shadow: 0 6px 18px rgba(11, 18, 32, 0.08);
+    opacity: 0;
+    transform: translateY(4px) scale(0.96);
+    transition: opacity 0.25s ease, transform 0.3s ease;
+    pointer-events: none;
+
+    &::before {
+      position: absolute;
+      left: -7px;
+      bottom: 13px;
+      width: 12px;
+      height: 12px;
+      border-bottom: 1px solid var(--bulma-border, #dbe3ea);
+      border-left: 1px solid var(--bulma-border, #dbe3ea);
+      background: inherit;
+      content: "";
+      transform: rotate(45deg);
+    }
+  }
+
+  &[data-state="listening"],
+  &[data-state="thinking"],
+  &[data-state="speaking"],
+  &[data-state="error"],
+  &[data-hint="true"] {
+    .pengu-bubble {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  .pengu-bubble-dots {
+    display: inline-flex;
+    gap: 0.2rem;
+    margin-left: 0.35rem;
+    vertical-align: middle;
+
+    i {
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: #4cd7c4;
+      animation: pengu-dot 1.2s ease-in-out infinite;
+    }
+
+    i:nth-child(2) {
+      animation-delay: 0.15s;
+    }
+
+    i:nth-child(3) {
+      animation-delay: 0.3s;
+    }
+  }
+}
+
+@media (max-width: 640px) {
+  .pengu {
+    min-height: 84px;
+
+    .pengu-stage {
+      width: 74px;
+      height: 80px;
+    }
+
+    .pengu-bubble {
+      max-width: 220px;
+      font-size: 0.8rem;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pengu * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+// -- keyframes ------------------------------------------------------------
+
+@keyframes pengu-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+@keyframes pengu-blink {
+  0%,
+  92%,
+  100% {
+    transform: scaleY(1);
+  }
+
+  95% {
+    transform: scaleY(0.12);
+  }
+}
+
+@keyframes pengu-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+    transform-box: fill-box;
+    transform-origin: center;
+  }
+
+  50% {
+    opacity: 0.55;
+    transform: scale(1.25);
+    transform-box: fill-box;
+    transform-origin: center;
+  }
+}
+
+@keyframes pengu-lean {
+  from {
+    transform: rotate(-5deg);
+  }
+
+  to {
+    transform: rotate(0deg);
+  }
+}
+
+@keyframes pengu-ripple {
+  from {
+    opacity: 0.8;
+    transform: scale(0.6);
+    transform-box: fill-box;
+    transform-origin: center;
+  }
+
+  to {
+    opacity: 0;
+    transform: scale(2.6);
+    transform-box: fill-box;
+    transform-origin: center;
+  }
+}
+
+@keyframes pengu-drift {
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(-2deg);
+  }
+
+  50% {
+    transform: translate(2px, -3px) rotate(2deg);
+  }
+}
+
+@keyframes pengu-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pengu-look {
+  from {
+    transform: translateY(-1px) scaleY(1.05);
+  }
+
+  to {
+    transform: translateY(1px) scaleY(0.9);
+  }
+}
+
+@keyframes pengu-nod {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+
+  50% {
+    transform: translateY(-2px) rotate(1.5deg);
+  }
+}
+
+@keyframes pengu-eq {
+  0%,
+  100% {
+    transform: scaleY(0.5);
+  }
+
+  50% {
+    transform: scaleY(1.6);
+  }
+}
+
+@keyframes pengu-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  25% {
+    transform: translateX(-3px) rotate(-2deg);
+  }
+
+  75% {
+    transform: translateX(3px) rotate(2deg);
+  }
+}
+
+@keyframes pengu-dot {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: translateY(0);
+  }
+
+  50% {
+    opacity: 1;
+    transform: translateY(-2px);
+  }
+}
