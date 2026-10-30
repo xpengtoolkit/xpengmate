@@ -216,17 +216,23 @@ The design is deliberately narrow:
 * there is no write path at all — the assistant cannot change data, and the
   prompt says so.
 
-The page has a small robot to show that state at a glance: it wakes as you type
-(listening), orbits while it reads your data (thinking), shows an equaliser when
-the answer lands, and squints if the provider fails. Say "Hey Pengu" (or "Hey
-XPENG") and the greeting is stripped from the question, like the car's own wake
-word. It is decoration with a job: CSS-only animation, `aria-hidden`, and
-frozen under `prefers-reduced-motion`.
+The page has a small robot to show that state at a glance, on a little display
+frame like the car's own screen: it wakes as you type (listening), thinks while
+it reads your data, and gestures when the answer lands. The character is
+**generated**, not drawn: image and video models through OpenRouter produce the
+3D-rendered robot, the four mood poses and the animated idle loop
+([scripts/pengu-art.py](scripts/pengu-art.py), about US$0.22 for the whole set),
+and the results are committed as static artwork under
+`elixir/priv/static/images/pengu/`. A hand-drawn SVG mascot remains as the
+zero-asset fallback. Say "Hey Pengu" (or "Hey XPENG") and the greeting is
+stripped from the question, like the car's own wake word. It is decoration with
+a job: `aria-hidden`, and under `prefers-reduced-motion` the loop is replaced by
+a still frame.
 
-The mascot is a self-contained component (inline SVG + one stylesheet, no
-JavaScript) and is written up for reuse elsewhere — state contract, porting
-recipe, gotchas and the visual-states harness — in
-[docs/PENGU.md](docs/PENGU.md).
+The component, the generation pipeline and the reuse notes (state contract,
+porting recipe, gotchas, the visual-states harness) are in
+[docs/PENGU.md](docs/PENGU.md); the models, keying constants and file hashes are
+in [docs/pengu-art.json](docs/pengu-art.json).
 
 **What leaves your server:** to answer, summaries of the drives, charges, tyre
 setups and battery readings in that snapshot are sent to the AI provider
