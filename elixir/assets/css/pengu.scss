@@ -1,22 +1,22 @@
 // Pengu - the little assistant that wakes up on the Ask page.
 //
-// The character is our own inline SVG (see TeslaMateWeb.Pengu), and every state
-// is a CSS animation keyed off `data-state` on the wrapper: idle floats and
-// blinks, listening leans in with ripples, thinking orbits dots, speaking
-// shows an equaliser, error shakes. No JavaScript, no image asset, and the
-// whole thing is switched off under prefers-reduced-motion.
+// The character is our own inline SVG (see TeslaMateWeb.Pengu), drawn in the
+// spirit of the car's assistant: glossy helmet, dark visor with glowing eyes,
+// side pods, capsule body, mitten hands and a raised wave. Every state is a CSS
+// animation keyed off `data-state` on the wrapper, so there is no JavaScript and
+// no image asset; prefers-reduced-motion freezes the whole thing.
 
 .pengu {
   display: flex;
   align-items: flex-end;
   gap: 0.75rem;
   margin: 0 0 1rem;
-  min-height: 104px;
+  min-height: 108px;
 
   .pengu-stage {
     flex: 0 0 auto;
-    width: 96px;
-    height: 104px;
+    width: 102px;
+    height: 120px;
     transition: transform 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.4);
   }
 
@@ -25,91 +25,128 @@
     width: 100%;
     height: 100%;
     overflow: visible;
-    color: #cbd8e4;
   }
 
-  // -- the character ------------------------------------------------------
+  // -- materials ----------------------------------------------------------
 
-  .pengu-shell {
-    fill: #f5f9fc;
-    stroke: #d7e2ec;
+  .pengu-helmet,
+  .pengu-torso {
+    fill: url(#pengu-shell);
+    stroke: #d3dfea;
     stroke-width: 2;
   }
 
-  .pengu-ear {
-    fill: #e3ebf2;
-    stroke: #d7e2ec;
-    stroke-width: 1.5;
+  .pengu-gloss {
+    fill: #ffffff;
+    opacity: 0.6;
   }
 
   .pengu-visor {
-    fill: #0b1220;
-  }
-
-  .pengu-eye {
-    fill: #4cd7c4;
-  }
-
-  .pengu-torso {
-    fill: #f5f9fc;
-    stroke: #d7e2ec;
-    stroke-width: 2;
-  }
-
-  .pengu-arm {
-    fill: #e9f0f6;
-    stroke: #d7e2ec;
+    fill: url(#pengu-visor-fill);
+    stroke: #24313f;
     stroke-width: 1.5;
   }
 
-  .pengu-core {
-    fill: none;
-    stroke: #4cd7c4;
-    stroke-width: 2;
-    opacity: 0.8;
+  .pengu-visor-glow {
+    fill: #4cd7c4;
+    opacity: 0.16;
   }
 
-  .pengu-core-dot {
+  .pengu-eye {
+    fill: #7ff2ee;
+    filter: drop-shadow(0 0 5px rgba(76, 215, 196, 0.95));
+  }
+
+  .pengu-pod {
+    fill: #eaf1f7;
+    stroke: #d3dfea;
+    stroke-width: 1.5;
+  }
+
+  .pengu-pod-ring {
     fill: #4cd7c4;
   }
 
-  .pengu-shadow {
-    fill: rgba(11, 18, 32, 0.12);
+  .pengu-collar {
+    fill: #4cd7c4;
+    opacity: 0.85;
   }
 
-  .pengu-antenna {
-    stroke: currentColor;
-    stroke-width: 3;
+  .pengu-mark {
+    fill: #4cd7c4;
+  }
+
+  .pengu-arm-outline {
+    stroke: #cfdce8;
+    stroke-width: 15;
     stroke-linecap: round;
   }
 
-  .pengu-antenna-tip {
-    fill: #4cd7c4;
-    filter: drop-shadow(0 0 5px rgba(76, 215, 196, 0.9));
+  .pengu-arm {
+    stroke: #f4f8fb;
+    stroke-width: 11;
+    stroke-linecap: round;
   }
+
+  .pengu-thumb {
+    fill: #4b5663;
+  }
+
+  .pengu-shoulder {
+    fill: #eaf1f7;
+    stroke: #d3dfea;
+    stroke-width: 1.5;
+  }
+
+  .pengu-hand {
+    fill: #39434f;
+  }
+
+  .pengu-hips {
+    fill: #39434f;
+    opacity: 0.9;
+  }
+
+  .pengu-leg {
+    fill: #dbe6ef;
+    stroke: #cddae6;
+    stroke-width: 1.5;
+  }
+
+  .pengu-foot {
+    fill: #f6fafd;
+    stroke: #cddae6;
+    stroke-width: 1.5;
+  }
+
+  .pengu-shadow {
+    fill: rgba(11, 18, 32, 0.14);
+  }
+
+  // -- state-only pieces --------------------------------------------------
 
   .pengu-ripple {
     fill: none;
     stroke: #4cd7c4;
-    stroke-width: 2;
+    stroke-width: 1.5;
     opacity: 0;
   }
 
   .pengu-orbit {
     opacity: 0;
     transform-box: view-box;
-    transform-origin: 60px 15px;
+    transform-origin: 60px 44px;
   }
 
   .pengu-orbit-dot {
     fill: #4cd7c4;
   }
 
-  .pengu-wave {
+  .pengu-voice {
     opacity: 0;
   }
 
-  .pengu-wave-bar {
+  .pengu-voice-bar {
     fill: #4cd7c4;
     transform-box: fill-box;
     transform-origin: center;
@@ -127,8 +164,18 @@
     animation: pengu-blink 6.2s infinite;
   }
 
-  .pengu-antenna-tip {
+  .pengu-arm-raised {
+    transform-box: view-box;
+    transform-origin: 84px 93px;
+    animation: pengu-wave 5.6s ease-in-out infinite;
+  }
+
+  .pengu-pod-ring {
     animation: pengu-pulse 3.4s ease-in-out infinite;
+  }
+
+  .pengu-mark {
+    animation: pengu-pulse 4.8s ease-in-out infinite;
   }
 
   // -- listening ----------------------------------------------------------
@@ -146,7 +193,7 @@
 
     .pengu-eyes {
       animation: none;
-      transform: scale(1.15);
+      transform: scale(1.18);
     }
 
     .pengu-ripple {
@@ -157,8 +204,12 @@
       animation-delay: 1s;
     }
 
-    .pengu-antenna-tip {
+    .pengu-pod-ring {
       animation: pengu-pulse 1.1s ease-in-out infinite;
+    }
+
+    .pengu-arm-raised {
+      animation: pengu-wave 1.4s ease-in-out infinite;
     }
   }
 
@@ -182,7 +233,7 @@
       animation: pengu-look 1.8s ease-in-out infinite alternate;
     }
 
-    .pengu-antenna-tip {
+    .pengu-pod-ring {
       animation: pengu-pulse 0.9s ease-in-out infinite;
     }
   }
@@ -198,24 +249,24 @@
       animation: pengu-nod 0.7s ease-in-out infinite;
     }
 
-    .pengu-wave {
+    .pengu-voice {
       opacity: 1;
     }
 
-    .pengu-wave-bar {
+    .pengu-voice-bar {
       animation: pengu-eq 0.7s ease-in-out infinite;
     }
 
-    .pengu-wave-bar:nth-child(2) {
+    .pengu-voice-bar:nth-child(2) {
       animation-delay: 0.1s;
     }
 
-    .pengu-wave-bar:nth-child(3) {
+    .pengu-voice-bar:nth-child(3) {
       animation-delay: 0.2s;
     }
 
-    .pengu-wave-bar:nth-child(4) {
-      animation-delay: 0.3s;
+    .pengu-arm-raised {
+      animation: pengu-wave 1s ease-in-out infinite;
     }
   }
 
@@ -231,9 +282,20 @@
       transform: scaleY(0.35);
     }
 
-    .pengu-antenna-tip {
+    .pengu-eye {
       fill: #ff8a80;
-      filter: drop-shadow(0 0 6px rgba(255, 138, 128, 0.9));
+      filter: drop-shadow(0 0 6px rgba(255, 138, 128, 0.95));
+    }
+
+    .pengu-pod-ring {
+      fill: #ff8a80;
+    }
+
+    .pengu-orbit,
+    .pengu-voice,
+    .pengu-ripple {
+      opacity: 0;
+      animation: none;
     }
   }
 
@@ -307,11 +369,11 @@
 
 @media (max-width: 640px) {
   .pengu {
-    min-height: 84px;
+    min-height: 90px;
 
     .pengu-stage {
-      width: 74px;
-      height: 80px;
+      width: 84px;
+      height: 99px;
     }
 
     .pengu-bubble {
@@ -349,7 +411,7 @@
   }
 
   95% {
-    transform: scaleY(0.12);
+    transform: scaleY(0.1);
   }
 }
 
@@ -357,16 +419,30 @@
   0%,
   100% {
     opacity: 1;
-    transform: scale(1);
-    transform-box: fill-box;
-    transform-origin: center;
   }
 
   50% {
-    opacity: 0.55;
-    transform: scale(1.25);
-    transform-box: fill-box;
-    transform-origin: center;
+    opacity: 0.45;
+  }
+}
+
+@keyframes pengu-wave {
+  0%,
+  60%,
+  100% {
+    transform: rotate(0deg);
+  }
+
+  70% {
+    transform: rotate(-14deg);
+  }
+
+  80% {
+    transform: rotate(6deg);
+  }
+
+  90% {
+    transform: rotate(-8deg);
   }
 }
 
@@ -382,15 +458,15 @@
 
 @keyframes pengu-ripple {
   from {
-    opacity: 0.8;
-    transform: scale(0.6);
+    opacity: 0.75;
+    transform: scale(0.7);
     transform-box: fill-box;
     transform-origin: center;
   }
 
   to {
     opacity: 0;
-    transform: scale(2.6);
+    transform: scale(1.9);
     transform-box: fill-box;
     transform-origin: center;
   }
@@ -399,11 +475,11 @@
 @keyframes pengu-drift {
   0%,
   100% {
-    transform: translate(0, 0) rotate(-2deg);
+    transform: translate(0, 0) rotate(-1.5deg);
   }
 
   50% {
-    transform: translate(2px, -3px) rotate(2deg);
+    transform: translate(2px, -3px) rotate(1.5deg);
   }
 }
 
@@ -419,7 +495,7 @@
   }
 
   to {
-    transform: translateY(1px) scaleY(0.9);
+    transform: translateY(1px) scaleY(0.92);
   }
 }
 
@@ -437,11 +513,11 @@
 @keyframes pengu-eq {
   0%,
   100% {
-    transform: scaleY(0.5);
+    transform: scaleY(0.45);
   }
 
   50% {
-    transform: scaleY(1.6);
+    transform: scaleY(1.5);
   }
 }
 

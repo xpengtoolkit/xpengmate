@@ -42,49 +42,78 @@ defmodule TeslaMateWeb.Pengu do
       aria-hidden="true"
     >
       <div class="pengu-stage">
-        <svg class="pengu-bot" viewBox="0 0 120 132" role="presentation" focusable="false">
-          <ellipse class="pengu-shadow" cx="60" cy="124" rx="26" ry="5" />
+        <svg class="pengu-bot" viewBox="0 0 120 142" role="presentation" focusable="false">
+          <defs>
+            <linearGradient id="pengu-shell" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#ffffff" />
+              <stop offset="1" stop-color="#d9e4ee" />
+            </linearGradient>
+            <linearGradient id="pengu-visor-fill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#101826" />
+              <stop offset="1" stop-color="#05080e" />
+            </linearGradient>
+          </defs>
+
+          <ellipse class="pengu-shadow" cx="60" cy="136" rx="30" ry="5" />
 
           <g class="pengu-float">
-            <rect class="pengu-arm" x="22" y="76" width="12" height="22" rx="6" />
-            <rect class="pengu-arm" x="86" y="76" width="12" height="22" rx="6" />
-            <rect class="pengu-torso" x="36" y="70" width="48" height="38" rx="18" />
-            <circle class="pengu-core" cx="60" cy="89" r="6" />
-            <circle class="pengu-core-dot" cx="60" cy="89" r="2.5" />
+            <rect class="pengu-leg" x="44" y="118" width="13" height="14" rx="6.5" />
+            <rect class="pengu-leg" x="62" y="118" width="13" height="14" rx="6.5" />
+            <rect class="pengu-foot" x="41" y="129" width="17" height="8" rx="4" />
+            <rect class="pengu-foot" x="61" y="129" width="17" height="8" rx="4" />
+            <rect class="pengu-hips" x="42" y="111" width="36" height="11" rx="5.5" />
+
+            <rect class="pengu-torso" x="32" y="80" width="56" height="36" rx="17" />
+            <path class="pengu-mark" d="M56 96 l4 -4 l4 4 l-4 4 z" />
+            <rect class="pengu-collar" x="44" y="75" width="32" height="7" rx="3.5" />
+
+            <circle class="pengu-shoulder" cx="37" cy="93" r="6.5" />
+            <line class="pengu-arm-outline" x1="37" y1="94" x2="28" y2="113" />
+            <line class="pengu-arm" x1="37" y1="94" x2="28" y2="113" />
+            <circle class="pengu-hand" cx="27" cy="116" r="7" />
+            <circle class="pengu-thumb" cx="32" cy="120" r="2.6" />
+
+            <circle class="pengu-shoulder" cx="83" cy="93" r="6.5" />
+            <g class="pengu-arm-raised">
+              <line class="pengu-arm-outline" x1="84" y1="93" x2="100" y2="55" />
+              <line class="pengu-arm" x1="84" y1="93" x2="100" y2="55" />
+              <circle class="pengu-hand" cx="102" cy="51" r="7.5" />
+              <circle class="pengu-thumb" cx="97" cy="47" r="2.8" />
+            </g>
 
             <g class="pengu-head">
-              <line class="pengu-antenna" x1="60" y1="30" x2="60" y2="19" />
-              <circle class="pengu-antenna-tip" cx="60" cy="15" r="4" />
+              <rect class="pengu-pod" x="16" y="32" width="12" height="28" rx="6" />
+              <rect class="pengu-pod" x="92" y="32" width="12" height="28" rx="6" />
+              <circle class="pengu-pod-ring" cx="22" cy="46" r="2.6" />
+              <circle class="pengu-pod-ring" cx="98" cy="46" r="2.6" />
 
-              <rect class="pengu-ear" x="18" y="44" width="8" height="18" rx="4" />
-              <rect class="pengu-ear" x="94" y="44" width="8" height="18" rx="4" />
-
-              <rect class="pengu-shell" x="26" y="30" width="68" height="46" rx="23" />
-              <rect class="pengu-visor" x="36" y="38" width="48" height="30" rx="15" />
+              <rect class="pengu-helmet" x="24" y="12" width="72" height="62" rx="31" />
+              <ellipse class="pengu-gloss" cx="43" cy="25" rx="12" ry="6" transform="rotate(-18 43 25)" />
+              <rect class="pengu-visor" x="32" y="24" width="56" height="42" rx="21" />
+              <ellipse class="pengu-visor-glow" cx="60" cy="59" rx="22" ry="5" />
 
               <g class="pengu-eyes">
-                <rect class="pengu-eye" x="47" y="47" width="9" height="12" rx="4.5" />
-                <rect class="pengu-eye" x="64" y="47" width="9" height="12" rx="4.5" />
-              </g>
-
-              <g class="pengu-wave">
-                <rect class="pengu-wave-bar" x="50" y="61" width="3" height="6" rx="1.5" />
-                <rect class="pengu-wave-bar" x="56.5" y="61" width="3" height="6" rx="1.5" />
-                <rect class="pengu-wave-bar" x="63" y="61" width="3" height="6" rx="1.5" />
-                <rect class="pengu-wave-bar" x="69.5" y="61" width="3" height="6" rx="1.5" />
+                <rect class="pengu-eye" x="43" y="37" width="14" height="19" rx="7" />
+                <rect class="pengu-eye" x="63" y="37" width="14" height="19" rx="7" />
               </g>
             </g>
           </g>
 
           <g class="pengu-ripples">
-            <circle class="pengu-ripple" cx="60" cy="15" r="6" />
-            <circle class="pengu-ripple pengu-ripple-2" cx="60" cy="15" r="6" />
+            <circle class="pengu-ripple" cx="60" cy="44" r="34" />
+            <circle class="pengu-ripple pengu-ripple-2" cx="60" cy="44" r="34" />
           </g>
 
           <g class="pengu-orbit">
-            <circle class="pengu-orbit-dot" cx="60" cy="5" r="2.6" />
-            <circle class="pengu-orbit-dot" cx="70" cy="10" r="2.1" />
-            <circle class="pengu-orbit-dot" cx="50" cy="10" r="2.1" />
+            <circle class="pengu-orbit-dot" cx="60" cy="-4" r="2.6" />
+            <circle class="pengu-orbit-dot" cx="103" cy="19" r="2.2" />
+            <circle class="pengu-orbit-dot" cx="17" cy="19" r="2.2" />
+          </g>
+
+          <g class="pengu-voice">
+            <rect class="pengu-voice-bar" x="4" y="38" width="3" height="8" rx="1.5" />
+            <rect class="pengu-voice-bar" x="-1" y="34" width="3" height="16" rx="1.5" />
+            <rect class="pengu-voice-bar" x="9" y="40" width="3" height="6" rx="1.5" />
           </g>
         </svg>
       </div>
