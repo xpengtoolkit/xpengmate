@@ -223,6 +223,11 @@ XPENG") and the greeting is stripped from the question, like the car's own wake
 word. It is decoration with a job: CSS-only animation, `aria-hidden`, and
 frozen under `prefers-reduced-motion`.
 
+The mascot is a self-contained component (inline SVG + one stylesheet, no
+JavaScript) and is written up for reuse elsewhere — state contract, porting
+recipe, gotchas and the visual-states harness — in
+[docs/PENGU.md](docs/PENGU.md).
+
 **What leaves your server:** to answer, summaries of the drives, charges, tyre
 setups and battery readings in that snapshot are sent to the AI provider
 (DeepSeek by default, or any OpenAI-compatible endpoint via `DEEPSEEK_BASE_URL`).
