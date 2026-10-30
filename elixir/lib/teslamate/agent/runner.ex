@@ -39,6 +39,17 @@ defmodule TeslaMate.Agent.Runner do
 
   defp loop(%{turns: turns} = state) when turns >= @max_turns, do: synthesise(state)
 
+  defp loop(state) do
+    case client().chat(state.chat, state.config) do
+      {:ok, response} ->
+        respond(state, response)
+
+      {:error, reason} ->
+        emit(state, {:error, Client.error_message(reason)})
+        emit(state, :done)
+    end
+  end
+
   # The turn ceiling is about cost, not about leaving the reader with nothing:
   # the model has already gathered tool results, so one more call with the
   # tools removed forces it to write the answer it owes.
@@ -63,17 +74,6 @@ defmodule TeslaMate.Agent.Runner do
           _ ->
             finish(%{state | tokens: tokens})
         end
-
-      {:error, reason} ->
-        emit(state, {:error, Client.error_message(reason)})
-        emit(state, :done)
-    end
-  end
-
-  defp loop(state) do
-    case client().chat(state.chat, state.config) do
-      {:ok, response} ->
-        respond(state, response)
 
       {:error, reason} ->
         emit(state, {:error, Client.error_message(reason)})
